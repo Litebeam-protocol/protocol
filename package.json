@@ -1,0 +1,36 @@
+{
+  "name": "@ag0ra/sdk",
+  "version": "0.1.0",
+  "description": "ag0ra protocol SDK — x402 micropayment client and MCP type definitions",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./x402": {
+      "import": "./dist/payment/x402-client.js",
+      "types": "./dist/payment/x402-client.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "viem": "^2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.0"
+  },
+  "keywords": ["mcp", "x402", "micropayments", "ai-agents", "base", "usdc"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ag0ra/protocol"
+  },
+  "homepage": "https://ag0ra.xyz"
+}
