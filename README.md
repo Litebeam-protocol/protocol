@@ -23,10 +23,10 @@ That's the entire integration. Your agent can now call any service.
 
 When your agent makes a request:
 
-1. **Classifies intent** using AI — "generate an image of Mars at dusk" → `image_generation`
-2. **Finds the best vendor** across 6,000+ x402 and MPP services, ranked by price × latency × on-chain reputation
+1. **Pre-filters candidates** — keyword search across 6,000+ x402 and MPP services returns up to 25 candidates
+2. **AI selects the winner** — the model sees the actual candidate list (name, description, price, protocol) and picks the best match by UUID, extracting vendor-specific parameters in the same inference call
 3. **Settles payment on-chain** — no API keys, no billing portals, pure crypto micropayments
-4. **Returns the result** — your agent never knows which vendor served it
+4. **Returns the result** with full cost transparency — vendor cost, ag0ra fee, and endpoint shown separately
 
 ### Why this matters as services scale
 
@@ -72,7 +72,10 @@ await mcp.call("call_service", {
   "routed_to": "Stable Diffusion XL",
   "provider": "replicate.com",
   "protocol": "x402",
-  "cost_usdc": 0.0052,
+  "cost_usdc": 0.0082,
+  "vendor_cost_usdc": 0.005,
+  "ag0ra_fee_usdc": 0.0032,
+  "vendor_endpoint": "https://replicate.com/api/generate",
   "latency_ms": 412,
   "candidates_evaluated": 5,
   "ai_routed": true

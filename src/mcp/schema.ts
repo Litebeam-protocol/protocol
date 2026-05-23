@@ -65,6 +65,12 @@ export interface CallServiceResult {
   protocol: 'x402' | 'mpp';
   /** Total cost charged to the agent's wallet (vendor cost + ag0ra fee) */
   cost_usdc: number;
+  /** Amount paid to the vendor */
+  vendor_cost_usdc: number;
+  /** ag0ra's routing/fee margin (cost_usdc − vendor_cost_usdc) */
+  ag0ra_fee_usdc: number;
+  /** The vendor endpoint that was called */
+  vendor_endpoint: string;
   /** End-to-end latency in milliseconds */
   latency_ms: number;
   /** Number of vendor candidates evaluated before selecting the winner */

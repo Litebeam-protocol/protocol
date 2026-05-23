@@ -32,6 +32,22 @@ export interface Service {
   reputation: number;
   last_seen: string;
   created_at: string;
+  /**
+   * AI-assessed quality score (0.0–1.0). Assigned during housekeeping sweeps.
+   * null until the service has been reviewed.
+   */
+  quality_score: number | null;
+  /**
+   * Moderation status set by the ag0ra housekeeping system or admin.
+   * - `none`     — not reviewed
+   * - `flagged`  — needs admin review
+   * - `approved` — explicitly cleared
+   * - `blocked`  — excluded from all routing
+   */
+  flag_status: 'none' | 'flagged' | 'approved' | 'blocked';
+  flag_reason: string | null;
+  /** Whether category was manually pinned (immune to registry re-sync overwrite) */
+  category_pinned: boolean;
 }
 
 /**
