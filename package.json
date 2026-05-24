@@ -1,7 +1,7 @@
 {
-  "name": "@ag0ra/sdk",
+  "name": "@litebeam/sdk",
   "version": "0.1.0",
-  "description": "ag0ra protocol SDK — x402 micropayment client and MCP type definitions",
+  "description": "litebeam protocol SDK — x402 micropayment client and MCP type definitions",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -30,7 +30,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ag0ra/protocol"
+    "url": "https://github.com/Litebeam-protocol/protocol"
   },
-  "homepage": "https://ag0ra.xyz"
+  "homepage": "https://litebeam.xyz"
 }

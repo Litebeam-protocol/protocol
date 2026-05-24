@@ -1,5 +1,5 @@
 /**
- * ag0ra x402 micropayment client
+ * litebeam x402 micropayment client
  *
  * A self-contained implementation of the x402 payment protocol
  * (https://x402.org) for Base mainnet USDC. Handles the full flow:
@@ -9,12 +9,12 @@
  *   3. Resubmit with X-PAYMENT header → receive 200 + result
  *
  * Works with any viem Account (private key, mnemonic-derived, hardware wallet, etc.)
- * No ag0ra account required — this is the same client ag0ra uses internally.
+ * No litebeam account required — this is the same client litebeam uses internally.
  *
  * @example
  * ```typescript
  * import { privateKeyToAccount } from 'viem/accounts';
- * import { settleX402 } from '@ag0ra/sdk/x402';
+ * import { settleX402 } from '@litebeam/sdk/x402';
  *
  * const account = privateKeyToAccount('0x...');
  * const result = await settleX402({

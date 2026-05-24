@@ -1,5 +1,5 @@
 /**
- * ag0ra service registry crawler
+ * litebeam service registry crawler
  *
  * Syncs services from two public directories:
  *   - agentic.market  — x402-enabled services (6,000+)

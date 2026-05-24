@@ -1,8 +1,8 @@
 # x402 Client
 
-The `@ag0ra/sdk/x402` package exports a standalone x402 micropayment client. Use it to call any x402-enabled endpoint directly, without going through ag0ra's routing layer.
+The `@litebeam/sdk/x402` package exports a standalone x402 micropayment client. Use it to call any x402-enabled endpoint directly, without going through litebeam's routing layer.
 
-ag0ra uses this same client internally. It's published here so the community can use it, audit it, and build on it.
+litebeam uses this same client internally. It's published here so the community can use it, audit it, and build on it.
 
 ## What is x402?
 
@@ -17,14 +17,14 @@ No wallet connect popups, no pending transactions from the client's perspective.
 ## Installation
 
 ```bash
-npm install @ag0ra/sdk viem
+npm install @litebeam/sdk viem
 ```
 
 ## Usage
 
 ```typescript
 import { privateKeyToAccount } from 'viem/accounts';
-import { settleX402 } from '@ag0ra/sdk/x402';
+import { settleX402 } from '@litebeam/sdk/x402';
 
 const account = privateKeyToAccount('0xYOUR_PRIVATE_KEY');
 
@@ -47,7 +47,7 @@ console.log(result.latencyMs);       // end-to-end time
 
 ```typescript
 import { mnemonicToAccount } from 'viem/accounts';
-import { settleX402 } from '@ag0ra/sdk/x402';
+import { settleX402 } from '@litebeam/sdk/x402';
 
 const account = mnemonicToAccount('word1 word2 ... word12', { addressIndex: 0 });
 
@@ -89,4 +89,4 @@ interface X402Result {
 
 ## Finding x402 services
 
-Browse [agentic.market](https://agentic.market) for the full directory of x402-enabled services, or use the ag0ra service directory at [ag0ra.xyz/services.html](https://ag0ra.xyz/services.html).
+Browse [agentic.market](https://agentic.market) for the full directory of x402-enabled services, or use the litebeam service directory at [litebeam.xyz/services](https://litebeam.xyz/services).

@@ -1,7 +1,7 @@
 /**
- * Example: Claude agent using ag0ra via MCP
+ * Example: Claude agent using litebeam via MCP
  *
- * This is a minimal Claude agent that connects to ag0ra and uses it to
+ * This is a minimal Claude agent that connects to litebeam and uses it to
  * route microservice calls. The agent can generate images, translate text,
  * search the web, and more — without knowing which vendor handles each request.
  *
@@ -9,25 +9,25 @@
  *   npm install @anthropic-ai/sdk @modelcontextprotocol/sdk
  *
  * Usage:
- *   AG0RA_API_KEY=sk-ag0ra-... ANTHROPIC_API_KEY=... npx tsx claude-agent.ts
+ *   LITEBEAM_API_KEY=sk-litebeam-... ANTHROPIC_API_KEY=... npx tsx claude-agent.ts
  */
 
 import Anthropic from '@anthropic-ai/sdk';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
-const AG0RA_KEY   = process.env['AG0RA_API_KEY']!;
-const AG0RA_URL   = 'https://mcp.ag0ra.xyz/mcp';
+const LITEBEAM_KEY = process.env['LITEBEAM_API_KEY']!;
+const LITEBEAM_URL = 'https://mcp.litebeam.xyz/mcp';
 
 async function main() {
-  // Connect to ag0ra MCP server
+  // Connect to litebeam MCP server
   const mcp = new Client({ name: 'claude-agent-example', version: '1.0.0' }, { capabilities: {} });
   await mcp.connect(new StreamableHTTPClientTransport(
-    new URL(AG0RA_URL),
-    { requestInit: { headers: { Authorization: `Bearer ${AG0RA_KEY}` } } },
+    new URL(LITEBEAM_URL),
+    { requestInit: { headers: { Authorization: `Bearer ${LITEBEAM_KEY}` } } },
   ));
 
-  // Get the tool list from ag0ra
+  // Get the tool list from litebeam
   const { tools } = await mcp.listTools();
 
   // Create Anthropic client

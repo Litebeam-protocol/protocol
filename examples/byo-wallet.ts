@@ -1,11 +1,11 @@
 /**
- * Example: BYO-wallet agent (Mode B — no ag0ra account needed)
+ * Example: BYO-wallet agent (Mode B — no litebeam account needed)
  *
- * Demonstrates paying ag0ra directly via x402 using your own Base wallet.
+ * Demonstrates paying litebeam directly via x402 using your own Base wallet.
  * No signup, no API key — just a wallet with USDC on Base.
  *
  * Prerequisites:
- *   npm install @ag0ra/sdk viem
+ *   npm install @litebeam/sdk viem
  *
  * Usage:
  *   PRIVATE_KEY=0x... npx tsx byo-wallet.ts
@@ -14,17 +14,17 @@
 import { privateKeyToAccount } from 'viem/accounts';
 import { settleX402 } from '../src/payment/x402-client.js';
 
-const AG0RA_CALL_ENDPOINT = 'https://ag0ra.xyz/api/call';
+const LITEBEAM_CALL_ENDPOINT = 'https://litebeam.xyz/api/call';
 
 async function main() {
   const account = privateKeyToAccount(process.env['PRIVATE_KEY'] as `0x${string}`);
   console.log('Wallet:', account.address);
 
-  // ag0ra's /api/call endpoint is itself an x402 server.
+  // litebeam's /api/call endpoint is itself an x402 server.
   // The settleX402 client handles the 402 → sign → resubmit flow automatically.
   const result = await settleX402({
     account,
-    endpoint: AG0RA_CALL_ENDPOINT,
+    endpoint: LITEBEAM_CALL_ENDPOINT,
     method: 'POST',
     params: {
       capability: 'web_search',

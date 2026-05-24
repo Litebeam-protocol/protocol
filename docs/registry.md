@@ -1,6 +1,6 @@
 # Service Registry
 
-ag0ra maintains a live index of AI microservices discovered from public protocol directories. This document explains how services get in, how they're ranked, and how reputation works.
+litebeam maintains a live index of AI microservices discovered from public protocol directories. This document explains how services get in, how they're ranked, and how reputation works.
 
 ## Sources
 
@@ -31,7 +31,7 @@ Category is inferred from the service name, provider, and description using the 
 
 ## Ranking
 
-When routing a call, ag0ra selects from matching services using a composite score:
+When routing a call, litebeam selects from matching services using a composite score:
 
 ```
 score = (priceScore × 0.5 + reputationScore × 0.5) × statusMultiplier
@@ -54,14 +54,14 @@ Reputation starts at **80** for every new service. It updates after every settle
 | Slow success (> 2000ms) | −1 |
 | Failure / rejected payment | −5 |
 
-Reputation is floored at 0 and capped at 100. Every delta is recorded in `reputation_events` for auditability. This dataset compounds with every call ag0ra routes — vendors that consistently perform well rise in rankings, vendors that fail or respond slowly fall.
+Reputation is floored at 0 and capped at 100. Every delta is recorded in `reputation_events` for auditability. This dataset compounds with every call litebeam routes — vendors that consistently perform well rise in rankings, vendors that fail or respond slowly fall.
 
 ## Domain caps
 
-To prevent catch-all gateway providers from flooding the index, ag0ra caps how many endpoints it accepts from any single domain: **300 per sync cycle**. This keeps the index diverse and prevents a single operator from dominating search results.
+To prevent catch-all gateway providers from flooding the index, litebeam caps how many endpoints it accepts from any single domain: **300 per sync cycle**. This keeps the index diverse and prevents a single operator from dominating search results.
 
 ## Adding your service
 
-If you operate an x402 or MPP service, list it on [agentic.market](https://agentic.market) or [mpp.dev](https://mpp.dev). ag0ra will discover it on the next sync cycle (within 6 hours).
+If you operate an x402 or MPP service, list it on [agentic.market](https://agentic.market) or [mpp.dev](https://mpp.dev). litebeam will discover it on the next sync cycle (within 6 hours).
 
-If your service is miscategorised or you notice any issue with how it appears in the ag0ra directory, open an issue or PR against the categorisation logic in [`src/registry/sync.ts`](../src/registry/sync.ts).
+If your service is miscategorised or you notice any issue with how it appears in the litebeam directory, open an issue or PR against the categorisation logic in [`src/registry/sync.ts`](../src/registry/sync.ts).

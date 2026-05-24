@@ -1,15 +1,15 @@
-# ag0ra
+# litebeam
 
 **One MCP connection. Every AI microservice. Zero config.**
 
-ag0ra is a universal routing layer for AI agents. Connect once via MCP and get instant access to thousands of AI microservices — image generation, translation, web search, audio, data APIs, and more — without managing vendor accounts, API keys, or payment integrations.
+litebeam is a universal routing layer for AI agents. Connect once via MCP and get instant access to thousands of AI microservices — image generation, translation, web search, audio, data APIs, and more — without managing vendor accounts, API keys, or payment integrations.
 
 ```json
 {
   "mcpServers": {
-    "ag0ra": {
-      "url": "https://mcp.ag0ra.xyz/mcp",
-      "headers": { "Authorization": "Bearer sk-ag0ra-YOUR_KEY" }
+    "litebeam": {
+      "url": "https://mcp.litebeam.xyz/mcp",
+      "headers": { "Authorization": "Bearer sk-litebeam-YOUR_KEY" }
     }
   }
 }
@@ -19,18 +19,18 @@ That's the entire integration. Your agent can now call any service.
 
 ---
 
-## What ag0ra does
+## What litebeam does
 
 When your agent makes a request:
 
 1. **Pre-filters candidates** — keyword search across 6,000+ x402 and MPP services returns up to 25 candidates
 2. **AI selects the winner** — the model sees the actual candidate list (name, description, price, protocol) and picks the best match by UUID, extracting vendor-specific parameters in the same inference call
 3. **Settles payment on-chain** — no API keys, no billing portals, pure crypto micropayments
-4. **Returns the result** with full cost transparency — vendor cost, ag0ra fee, and endpoint shown separately
+4. **Returns the result** with full cost transparency — vendor cost, litebeam fee, and endpoint shown separately
 
 ### Why this matters as services scale
 
-Routing to the right microservice is already non-trivial at hundreds of services. At thousands, it's intractable for an agent to reason about directly. ag0ra turns a vendor-selection problem into a one-line capability call. The routing layer also decouples your agent from specific protocols (x402, MPP, and future ones) — your code doesn't change as payment infrastructure evolves.
+Routing to the right microservice is already non-trivial at hundreds of services. At thousands, it's intractable for an agent to reason about directly. litebeam turns a vendor-selection problem into a one-line capability call. The routing layer also decouples your agent from specific protocols (x402, MPP, and future ones) — your code doesn't change as payment infrastructure evolves.
 
 ---
 
@@ -41,7 +41,7 @@ Routing to the right microservice is already non-trivial at hundreds of services
 Route any AI microservice call using natural language or an explicit capability keyword.
 
 ```typescript
-// Natural language — ag0ra classifies and routes automatically
+// Natural language — litebeam classifies and routes automatically
 await mcp.call("call_service", {
   request: "translate this text to French: Hello, world"
 });
@@ -57,11 +57,11 @@ await mcp.call("call_service", {
 
 | Field | Type | Description |
 |---|---|---|
-| `request` | `string` | Natural language description of what you need. ag0ra uses AI to classify, find the best vendor, and format the call. |
+| `request` | `string` | Natural language description of what you need. litebeam uses AI to classify, find the best vendor, and format the call. |
 | `capability` | `string` | Explicit capability keyword (e.g. `"image_generation"`, `"translate"`). Skips AI routing — use when you know exactly what you need. |
 | `params` | `object` | Parameters merged with AI-extracted params and passed to the vendor. |
-| `max_price_usdc` | `number` | Maximum price per call in USDC. ag0ra will not route to vendors above this price. |
-| `protocol` | `"x402" \| "mpp"` | Force a specific protocol. Omit to let ag0ra choose. |
+| `max_price_usdc` | `number` | Maximum price per call in USDC. litebeam will not route to vendors above this price. |
+| `protocol` | `"x402" \| "mpp"` | Force a specific protocol. Omit to let litebeam choose. |
 | `hitl_override_id` | `string` | UUID of an approved HITL request. Include this to proceed after human approval of a high-cost call. |
 
 **Response:**
@@ -74,7 +74,7 @@ await mcp.call("call_service", {
   "protocol": "x402",
   "cost_usdc": 0.0082,
   "vendor_cost_usdc": 0.005,
-  "ag0ra_fee_usdc": 0.0032,
+  "litebeam_fee_usdc": 0.0032,
   "vendor_endpoint": "https://replicate.com/api/generate",
   "latency_ms": 412,
   "candidates_evaluated": 5,
@@ -114,11 +114,11 @@ await mcp.call("list_services", {
 
 ## Wallet & payment model
 
-### Mode A — ag0ra wallet (recommended)
+### Mode A — litebeam wallet (recommended)
 
-Get a dedicated USDC wallet address on Base, fund it, and ag0ra draws per-request automatically. Every deduction is on-chain and auditable. Balance always withdrawable.
+Get a dedicated USDC wallet address on Base, fund it, and litebeam draws per-request automatically. Every deduction is on-chain and auditable. Balance always withdrawable.
 
-1. Sign up at [ag0ra.xyz](https://ag0ra.xyz)
+1. Sign up at [litebeam.xyz](https://litebeam.xyz)
 2. Copy your API key and wallet address
 3. Send USDC to your wallet address on Base
 4. Configure the MCP server (snippet above)
@@ -127,10 +127,10 @@ Budget controls available: daily spend limits, per-call HITL approval thresholds
 
 ### Mode B — BYO wallet (no account needed)
 
-Agents with their own Base wallet (Coinbase AgentKit, CDP, or any Base wallet) can call ag0ra's REST endpoint directly. ag0ra quotes the price, the agent signs and pays via [x402](https://x402.org), ag0ra routes and returns the result. No pre-funding, no signup.
+Agents with their own Base wallet (Coinbase AgentKit, CDP, or any Base wallet) can call litebeam's REST endpoint directly. litebeam quotes the price, the agent signs and pays via [x402](https://x402.org), litebeam routes and returns the result. No pre-funding, no signup.
 
 ```
-POST https://ag0ra.xyz/api/call
+POST https://litebeam.xyz/api/call
 { "capability": "image_generation", "params": { "prompt": "..." } }
 → 402 + payment offer
 → POST with X-PAYMENT header
@@ -141,17 +141,17 @@ POST https://ag0ra.xyz/api/call
 
 ## Reputation system
 
-Every settled transaction updates vendor reputation scores. Ranking uses `price × latency × reputation` — not just lowest listed price. Vendors that consistently deliver fast, correct results rank higher than cheaper vendors that are slow or unreliable. This dataset compounds with every call and is the core reason ag0ra gets better over time.
+Every settled transaction updates vendor reputation scores. Ranking uses `price × latency × reputation` — not just lowest listed price. Vendors that consistently deliver fast, correct results rank higher than cheaper vendors that are slow or unreliable. This dataset compounds with every call and is the core reason litebeam gets better over time.
 
 ---
 
 ## Repo contents
 
-This repository contains the **protocol-facing layer** of ag0ra:
+This repository contains the **protocol-facing layer** of litebeam:
 
 | Path | Description |
 |---|---|
-| [`src/payment/x402-client.ts`](src/payment/x402-client.ts) | Standalone x402 micropayment client — reusable outside ag0ra |
+| [`src/payment/x402-client.ts`](src/payment/x402-client.ts) | Standalone x402 micropayment client — reusable outside litebeam |
 | [`src/mcp/schema.ts`](src/mcp/schema.ts) | MCP tool input/output type definitions |
 | [`src/registry/types.ts`](src/registry/types.ts) | Service registry types |
 | [`src/registry/sync.ts`](src/registry/sync.ts) | Registry crawler (agentic.market + mpp.dev) |
@@ -164,7 +164,7 @@ This repository contains the **protocol-facing layer** of ag0ra:
 
 ## Links
 
-- **Website**: [ag0ra.xyz](https://ag0ra.xyz)
-- **Service directory**: [ag0ra.xyz/services.html](https://ag0ra.xyz/services.html)
-- **Sign up**: [ag0ra.xyz](https://ag0ra.xyz)
-- **Email**: [hello@ag0ra.xyz](mailto:hello@ag0ra.xyz)
+- **Website**: [litebeam.xyz](https://litebeam.xyz)
+- **Service directory**: [litebeam.xyz/services](https://litebeam.xyz/services)
+- **Sign up**: [litebeam.xyz](https://litebeam.xyz)
+- **Email**: [hello@litebeam.xyz](mailto:hello@litebeam.xyz)

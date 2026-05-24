@@ -1,5 +1,5 @@
 /**
- * ag0ra service registry types
+ * litebeam service registry types
  *
  * The registry is synced every 6 hours from agentic.market (x402) and
  * mpp.dev (MPP). Vendors are ranked by price × latency × reputation score.
@@ -38,7 +38,7 @@ export interface Service {
    */
   quality_score: number | null;
   /**
-   * Moderation status set by the ag0ra housekeeping system or admin.
+   * Moderation status set by the litebeam housekeeping system or admin.
    * - `none`     — not reviewed
    * - `flagged`  — needs admin review
    * - `approved` — explicitly cleared

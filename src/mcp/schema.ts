@@ -1,7 +1,7 @@
 /**
- * ag0ra MCP tool schemas
+ * litebeam MCP tool schemas
  *
- * Type definitions for the ag0ra MCP server's tools.
+ * Type definitions for the litebeam MCP server's tools.
  * Import these for type-safe integration in TypeScript agents.
  */
 
@@ -9,7 +9,7 @@
 
 export interface CallServiceInput {
   /**
-   * Natural language description of what you need. ag0ra uses AI to classify
+   * Natural language description of what you need. litebeam uses AI to classify
    * intent, find the best vendor, and format the call automatically.
    *
    * @example "translate this text to French: Hello, world"
@@ -35,13 +35,13 @@ export interface CallServiceInput {
   params?: Record<string, unknown>;
 
   /**
-   * Maximum price per call in USDC. ag0ra will not route to vendors above
+   * Maximum price per call in USDC. litebeam will not route to vendors above
    * this price. Omit to accept any price.
    */
   max_price_usdc?: number;
 
   /**
-   * Force a specific payment protocol. Omit to let ag0ra choose the best
+   * Force a specific payment protocol. Omit to let litebeam choose the best
    * available option.
    */
   protocol?: 'x402' | 'mpp';
@@ -63,12 +63,12 @@ export interface CallServiceResult {
   provider: string;
   /** Payment protocol used */
   protocol: 'x402' | 'mpp';
-  /** Total cost charged to the agent's wallet (vendor cost + ag0ra fee) */
+  /** Total cost charged to the agent's wallet (vendor cost + litebeam fee) */
   cost_usdc: number;
   /** Amount paid to the vendor */
   vendor_cost_usdc: number;
-  /** ag0ra's routing/fee margin (cost_usdc − vendor_cost_usdc) */
-  ag0ra_fee_usdc: number;
+  /** litebeam's routing fee margin (cost_usdc − vendor_cost_usdc) */
+  litebeam_fee_usdc: number;
   /** The vendor endpoint that was called */
   vendor_endpoint: string;
   /** End-to-end latency in milliseconds */
