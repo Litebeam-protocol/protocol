@@ -1,6 +1,6 @@
 # litebeam
 
-**One MCP connection. Every AI microservice. Zero config.**
+**The routing layer for AI agents.**
 
 litebeam is a universal routing layer for AI agents. Connect once via MCP and get instant access to thousands of AI microservices — image generation, translation, web search, audio, data APIs, and more — without managing vendor accounts, API keys, or payment integrations.
 

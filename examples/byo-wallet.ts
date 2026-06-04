@@ -5,7 +5,8 @@
  * No signup, no API key — just a wallet with USDC on Base.
  *
  * Prerequisites:
- *   npm install @litebeam/sdk viem
+ *   npm install viem
+ *   Copy src/payment/x402-client.ts into your project
  *
  * Usage:
  *   PRIVATE_KEY=0x... npx tsx byo-wallet.ts
