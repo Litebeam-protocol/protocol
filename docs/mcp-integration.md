@@ -1,48 +1,59 @@
-# MCP Integration Guide
+# MCP integration
 
-litebeam exposes its routing engine as an MCP server. Any MCP-compatible client (Claude Desktop, Claude Code, custom agent) can connect and immediately call thousands of AI microservices.
+litebeam exposes a standard Model Context Protocol server. Any MCP-compatible agent or client can connect with a single config block. Your API key authenticates the session and routes all calls to your agent's wallet.
 
-## Connection
+## Standard MCP config
+
+Add the following to your agent or client's MCP server configuration:
 
 ```json
 {
   "mcpServers": {
     "litebeam": {
-      "url": "https://mcp.litebeam.xyz/mcp",
+      "url": "https://mcp.litebeam.xyz",
       "headers": {
-        "Authorization": "Bearer sk-litebeam-YOUR_KEY"
+        "Authorization": "Bearer sk-litebeam-your-key-here"
       }
     }
   }
 }
 ```
 
-Get your API key at [litebeam.xyz](https://litebeam.xyz). The MCP server uses Streamable HTTP transport (MCP spec §6.3).
+The MCP server uses Streamable HTTP transport (MCP spec §6.3).
 
-## Claude Desktop
+## Supported clients
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+### Claude Desktop
+
+Open `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows) and add the `litebeam` block to `mcpServers`.
+
+### Cursor
+
+Go to **Cursor → Settings → MCP** and add a new server entry with the URL and Authorization header above.
+
+### Claude Code (CLI)
 
 ```json
 {
   "mcpServers": {
     "litebeam": {
-      "url": "https://mcp.litebeam.xyz/mcp",
-      "headers": { "Authorization": "Bearer sk-litebeam-YOUR_KEY" }
+      "type": "sse",
+      "url":   "https://mcp.litebeam.xyz",
+      "headers": {
+        "Authorization": "Bearer sk-litebeam-your-key-here"
+      }
     }
   }
 }
 ```
 
-## Claude Code
+Add this to `~/.claude/settings.json`.
 
-```bash
-claude mcp add litebeam --transport http \
-  --url https://mcp.litebeam.xyz/mcp \
-  --header "Authorization: Bearer sk-litebeam-YOUR_KEY"
-```
+### Any HTTP MCP client
 
-## Custom agent (TypeScript)
+The litebeam MCP endpoint speaks standard [MCP over HTTP](https://modelcontextprotocol.io) with SSE streaming. Point your client at `https://mcp.litebeam.xyz` and include the `Authorization: Bearer <key>` header on every request.
+
+### Custom agent (TypeScript)
 
 ```typescript
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -50,102 +61,89 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 
 const client = new Client({ name: 'my-agent', version: '1.0.0' }, { capabilities: {} });
 const transport = new StreamableHTTPClientTransport(
-  new URL('https://mcp.litebeam.xyz/mcp'),
-  { requestInit: { headers: { Authorization: 'Bearer sk-litebeam-YOUR_KEY' } } }
+  new URL('https://mcp.litebeam.xyz'),
+  { requestInit: { headers: { Authorization: 'Bearer sk-litebeam-your-key-here' } } }
 );
 await client.connect(transport);
 
-// Call any service with natural language
 const result = await client.callTool('call_service', {
   request: 'generate a photorealistic image of a red panda in the snow'
 });
 ```
 
-## Tool: `call_service`
+---
 
-### Natural language mode (recommended)
+## Authentication
+
+litebeam API keys start with `sk-litebeam-` and are shown once at account creation. Store yours securely — it cannot be retrieved later, but you can rotate it from the dashboard.
+
+> **Your key controls your wallet.** Anyone with your key can spend your USDC balance. Never commit it to source control or expose it in client-side code. Set a daily spend limit and HITL threshold as a safety net.
+
+Pass the key as a Bearer token in the `Authorization` header on every request to the MCP server or REST API:
+
+```
+Authorization: Bearer sk-litebeam-your-key-here
+```
+
+---
+
+## MCP tools
+
+### `call_service`
+
+Route any AI microservice call using natural language or an explicit capability keyword.
 
 ```typescript
+// Natural language — litebeam classifies and routes automatically
 await client.callTool('call_service', {
   request: 'translate "good morning" to Japanese, French, and Spanish'
 });
-```
 
-litebeam:
-1. Classifies intent → `translation`
-2. Finds cheapest online translation vendor
-3. Formats the request for that vendor's API
-4. Settles payment and returns the result
-
-### Explicit capability mode (no AI overhead)
-
-```typescript
+// Explicit capability — skips AI routing, slightly cheaper
 await client.callTool('call_service', {
   capability: 'image_generation',
-  params: {
-    prompt: 'cyberpunk cityscape at dusk, neon rain',
-    width: 1024,
-    height: 1024,
-  },
+  params: { prompt: 'cyberpunk cityscape at dusk, neon rain', width: 1024, height: 1024 },
   max_price_usdc: 0.05,
 });
 ```
 
-Use this when you know exactly what you need and want to avoid the `$0.003` inference overhead.
+**Parameters:**
 
-## Budget controls
+| Field | Type | Description |
+|---|---|---|
+| `request` | `string` | Natural language description. litebeam uses AI to classify, find the best vendor, and format the call. |
+| `capability` | `string` | Explicit capability keyword (e.g. `image_generation`, `translation`). Skips AI routing. |
+| `params` | `object` | Parameters merged with AI-extracted params and passed to the vendor. |
+| `max_price_usdc` | `number` | Maximum price per call in USDC. litebeam will not route above this price. |
+| `protocol` | `"x402" \| "mpp"` | Force a specific protocol. Omit to let litebeam choose. |
+| `hitl_override_id` | `string` | UUID of an approved HITL request. Include after human approval of a high-cost call. |
 
-Configure from your [dashboard](https://litebeam.xyz/dashboard) or via the API:
+**Response:**
 
-```typescript
-await fetch('https://litebeam.xyz/api/wallet/controls', {
-  method: 'PATCH',
-  headers: {
-    'Authorization': 'Bearer sk-litebeam-YOUR_KEY',
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    daily_limit_usdc: 10.00,     // hard cap; resets at UTC midnight
-    hitl_threshold: 1.00,         // calls above $1 require human approval
-    low_balance_alert: 5.00,      // webhook notification when balance drops below $5
-    webhook_url: 'https://yourapp.com/webhooks/litebeam',
-  }),
-});
-```
-
-### Human-in-the-loop (HITL)
-
-When a call exceeds your `hitl_threshold`, litebeam:
-1. Returns a `hitl_request_id` instead of executing the call
-2. Sends a webhook to your `webhook_url`
-3. Waits for your approval (15-minute window)
-
-```typescript
-// The agent receives this instead of a result:
+```json
 {
-  "hitl_request_id": "550e8400-e29b-41d4-a716-446655440000",
-  "estimated_cost_usdc": 2.50,
-  "capability": "video_generation",
-  "expires_at": "2025-01-01T12:15:00Z"
+  "result": { "...": "vendor response" },
+  "routed_to": "Stable Diffusion XL",
+  "provider": "replicate.com",
+  "protocol": "x402",
+  "cost_usdc": 0.0082,
+  "vendor_cost_usdc": 0.005,
+  "litebeam_fee_usdc": 0.0032,
+  "vendor_endpoint": "https://replicate.com/api/generate",
+  "latency_ms": 412,
+  "candidates_evaluated": 5,
+  "ai_routed": true
 }
-
-// After you approve at: POST /api/hitl/{id}/approve
-// Retry the original call:
-await client.callTool('call_service', {
-  request: 'generate a 10-second product demo video',
-  hitl_override_id: '550e8400-e29b-41d4-a716-446655440000',
-});
 ```
 
-## Webhook signature verification
+### `list_services`
 
-All outbound webhooks include an `X-LITEBEAM-Signature` header (HMAC-SHA256 of the request body, signed with your `WEBHOOK_SIGNING_SECRET`). Verify before acting:
+Browse available services. Filter by category, protocol, or search term.
 
 ```typescript
-import { createHmac } from 'crypto';
-
-function verifyWebhook(body: string, signature: string, secret: string): boolean {
-  const expected = createHmac('sha256', secret).update(body).digest('hex');
-  return expected === signature;
-}
+await client.callTool('list_services', {
+  category: 'image',
+  protocol: 'x402',
+  limit: 20
+});
 ```

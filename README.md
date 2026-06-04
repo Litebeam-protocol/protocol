@@ -145,6 +145,22 @@ Every settled transaction updates vendor reputation scores. Ranking uses `price 
 
 ---
 
+## Documentation
+
+| Doc | Description |
+|---|---|
+| [`docs/getting-started.md`](docs/getting-started.md) | What is litebeam + quick start |
+| [`docs/mcp-integration.md`](docs/mcp-integration.md) | MCP config, supported clients, authentication, MCP tools |
+| [`docs/payment-modes.md`](docs/payment-modes.md) | Mode A (litebeam wallet) and Mode B (BYO wallet) |
+| [`docs/services.md`](docs/services.md) | Service directory, categories, protocols |
+| [`docs/wallet.md`](docs/wallet.md) | Funding, budget controls, HITL approvals, withdrawals |
+| [`docs/api-reference.md`](docs/api-reference.md) | Full REST API reference |
+| [`docs/faq.md`](docs/faq.md) | Frequently asked questions |
+| [`docs/x402-client.md`](docs/x402-client.md) | Standalone x402 client (source reference) |
+| [`docs/registry.md`](docs/registry.md) | Registry internals: discovery, ranking, reputation |
+
+Full interactive docs at [litebeam.xyz/docs](https://litebeam.xyz/docs).
+
 ## Repo contents
 
 This repository contains the **protocol-facing layer** of litebeam:
@@ -155,9 +171,6 @@ This repository contains the **protocol-facing layer** of litebeam:
 | [`src/mcp/schema.ts`](src/mcp/schema.ts) | MCP tool input/output type definitions |
 | [`src/registry/types.ts`](src/registry/types.ts) | Service registry types |
 | [`src/registry/sync.ts`](src/registry/sync.ts) | Registry crawler (agentic.market + mpp.dev) |
-| [`docs/mcp-integration.md`](docs/mcp-integration.md) | Full MCP integration guide |
-| [`docs/x402-client.md`](docs/x402-client.md) | Using the x402 client standalone |
-| [`docs/registry.md`](docs/registry.md) | How service discovery and reputation work |
 | [`examples/`](examples/) | Integration examples |
 
 ---
