@@ -60,6 +60,20 @@ Reputation is floored at 0 and capped at 100. Every delta is recorded in `reputa
 
 To prevent catch-all gateway providers from flooding the index, litebeam caps how many endpoints it accepts from any single domain: **300 per sync cycle**. This keeps the index diverse and prevents a single operator from dominating search results.
 
+## Vendor documentation (llms.txt)
+
+During each sync, litebeam fetches `https://{domain}/llms.txt` for every registered vendor domain. If present, it extracts the most parameter-rich block for each endpoint and stores it as `endpoint_schema` in the service record.
+
+This serves two purposes:
+
+1. **Routing accuracy** — the routing AI receives the endpoint's parameter spec as context when selecting and parameterising a call, reducing mismatches between the agent's intent and the vendor's required fields.
+
+2. **Workflow guidance** — after a call settles, litebeam returns the relevant section from the vendor's llms.txt as `vendor_guidance` in the response. This gives the agent the information it needs to sequence multi-step workflows (e.g. flight search → booking).
+
+If your service has a multi-step API or requires specific parameter formats (IATA codes, ISO dates, tokens from a prior step), publishing an llms.txt at your domain root materially improves how agents interact with your service through litebeam.
+
+See the [llms.txt spec](https://llmstxt.org) for the format.
+
 ## Adding your service
 
 If you operate an x402 or MPP service, list it on [agentic.market](https://agentic.market) or [mpp.dev](https://mpp.dev). litebeam will discover it on the next sync cycle (within 6 hours).
