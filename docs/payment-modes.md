@@ -4,7 +4,7 @@ litebeam supports two payment modes. Both use the same MCP server and routing en
 
 ---
 
-## Mode A — litebeam wallet (recommended)
+## Managed mode — litebeam wallet (recommended)
 
 The default mode. Your agent is provisioned a dedicated USDC wallet address on Base. You deposit funds upfront; litebeam deducts per-request automatically. Every deduction is on-chain and auditable. Your balance is always withdrawable.
 
@@ -27,7 +27,7 @@ The default mode. Your agent is provisioned a dedicated USDC wallet address on B
 
 ---
 
-## Mode B — BYO wallet (no account needed)
+## Direct mode — BYO wallet (no account needed)
 
 For agents that already have a Base wallet (Coinbase AgentKit, CDP, or any Base-compatible wallet). No litebeam account required — your agent pays per-call directly using the x402 protocol.
 
@@ -42,7 +42,7 @@ When the agent calls a service, litebeam returns an HTTP 402 response with the p
 | Budget controls | Agent-side only |
 | litebeam fee | Included in the quoted price |
 
-> **Mode B has no dashboard budget controls.** Your agent is responsible for its own spend limits. litebeam quotes the price upfront in the 402 response, so your agent can inspect cost before committing.
+> **Direct mode has no dashboard budget controls.** Your agent is responsible for its own spend limits. litebeam quotes the price upfront in the 402 response, so your agent can inspect cost before committing.
 
 ### Example
 

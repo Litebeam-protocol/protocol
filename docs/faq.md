@@ -2,7 +2,7 @@
 
 **Can I use litebeam without creating an account?**
 
-Yes — Mode B (BYO wallet) requires no signup. Your agent pays per-call directly from its own Base wallet using the x402 protocol. See [payment modes](./payment-modes.md).
+Yes — Direct mode (BYO wallet) requires no signup. Your agent pays per-call directly from its own Base wallet using the x402 protocol. See [payment modes](./payment-modes.md).
 
 **What happens if my balance runs out mid-task?**
 

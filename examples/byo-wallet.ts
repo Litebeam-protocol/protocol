@@ -1,5 +1,5 @@
 /**
- * Example: BYO-wallet agent (Mode B — no litebeam account needed)
+ * Example: BYO-wallet agent (Direct mode — no litebeam account needed)
  *
  * Demonstrates paying litebeam directly via x402 using your own Base wallet.
  * No signup, no API key — just a wallet with USDC on Base.

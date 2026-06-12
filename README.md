@@ -114,7 +114,7 @@ await mcp.call("list_services", {
 
 ## Wallet & payment model
 
-### Mode A — litebeam wallet (recommended)
+### Managed mode — litebeam wallet (recommended)
 
 Get a dedicated USDC wallet address on Base, fund it, and litebeam draws per-request automatically. Every deduction is on-chain and auditable. Balance always withdrawable.
 
@@ -125,7 +125,7 @@ Get a dedicated USDC wallet address on Base, fund it, and litebeam draws per-req
 
 Budget controls available: daily spend limits, per-call HITL approval thresholds, and low-balance alerts via webhook.
 
-### Mode B — BYO wallet (no account needed)
+### Direct mode — BYO wallet (no account needed)
 
 Agents with their own Base wallet (Coinbase AgentKit, CDP, or any Base wallet) can call litebeam's REST endpoint directly. litebeam quotes the price, the agent signs and pays via [x402](https://x402.org), litebeam routes and returns the result. No pre-funding, no signup.
 
@@ -151,7 +151,7 @@ Every settled transaction updates vendor reputation scores. Ranking uses `price 
 |---|---|
 | [`docs/getting-started.md`](docs/getting-started.md) | What is litebeam + quick start |
 | [`docs/mcp-integration.md`](docs/mcp-integration.md) | MCP config, supported clients, authentication, MCP tools |
-| [`docs/payment-modes.md`](docs/payment-modes.md) | Mode A (litebeam wallet) and Mode B (BYO wallet) |
+| [`docs/payment-modes.md`](docs/payment-modes.md) | Managed mode (litebeam wallet) and Direct mode (BYO wallet) |
 | [`docs/services.md`](docs/services.md) | Service directory, categories, protocols |
 | [`docs/wallet.md`](docs/wallet.md) | Funding, budget controls, HITL approvals, withdrawals |
 | [`docs/api-reference.md`](docs/api-reference.md) | Full REST API reference |

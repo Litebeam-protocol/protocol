@@ -22,7 +22,7 @@ Browse the full directory at [litebeam.xyz/services](https://litebeam.xyz/servic
 
 | Protocol | Description |
 |---|---|
-| **x402** | HTTP 402-based micropayments (Coinbase spec). Vendor returns 402 with payment details; litebeam settles on-chain and retries. Supports both Mode A and Mode B. |
+| **x402** | HTTP 402-based micropayments (Coinbase spec). Vendor returns 402 with payment details; litebeam settles on-chain and retries. Supports both Managed mode and Direct mode. |
 | **MPP** | Multi-Party Payment protocol. Settlement via litebeam's Tempo buffer wallet using pathUSD. |
 
 ## Adding your service
