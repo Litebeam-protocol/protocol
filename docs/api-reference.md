@@ -1,10 +1,23 @@
 # API reference
 
-The litebeam REST API is available at `https://litebeam.xyz/api`. All endpoints accept and return JSON. Authenticated endpoints require a session cookie (dashboard) or Bearer token (programmatic).
+The litebeam REST API is available at `https://litebeam.xyz/api`. All endpoints accept and return JSON. Authenticated endpoints require a session cookie (dashboard) or Bearer token (programmatic):
 
 ```
 Authorization: Bearer sk-litebeam-your-key-here
 ```
+
+Direct mode endpoints require no authentication — payment is via x402.
+
+---
+
+## Direct mode — service calls
+
+For agents using their own Base wallet (no API key required).
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/call` | Call a service. Body: `{ request, params?, max_price_usdc? }`. Without `X-Payment` header: returns `402` with price offer `{ estimated_cost_usdc, routed_to, accepts: [...] }`. With `X-Payment` header (base64-encoded EIP-3009 signed USDC transfer): executes call and returns `{ result, routed_to, cost_usdc, tx_hash, latency_ms }`. |
+| `GET` | `/api/discover` | Discover available services. No auth required. Without params: category summary with counts and prices. With `q` (keyword) and/or `category` + `limit`: matching services list. |
 
 ---
 
@@ -12,7 +25,9 @@ Authorization: Bearer sk-litebeam-your-key-here
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/auth/signup` | Create account. Body: `{ email, password }`. Sends verification email. |
+| `POST` | `/api/auth/register` | Create account. Body: `{ email, password }`. Sends verification email. |
+| `POST` | `/api/auth/verify` | Verify email address. Body: `{ token }` from verification email. |
+| `POST` | `/api/auth/resend-verification` | Resend verification email. Body: `{ email }`. |
 | `POST` | `/api/auth/login` | Log in. Body: `{ email, password }`. Returns session cookie. |
 | `POST` | `/api/auth/logout` | Invalidate session cookie. |
 | `GET` | `/api/auth/me` | Return current session user + agent info. |
@@ -46,6 +61,7 @@ Authorization: Bearer sk-litebeam-your-key-here
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/hitl` | List HITL requests. Query param: `status` (pending / approved / rejected). |
+| `GET` | `/api/hitl/:id` | Get a specific HITL request. Accessible to the owning agent or dashboard session. |
 | `POST` | `/api/hitl/:id/approve` | Approve a pending HITL request. |
 | `POST` | `/api/hitl/:id/reject` | Reject a pending HITL request. |
 
