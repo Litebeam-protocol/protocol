@@ -1,6 +1,6 @@
 ---
 title: "Litebeam"
-description: "Access 12,000+ AI microservices — image generation, web search, financial data, translation, compute, travel, audio — paid per-call in USDC via x402. No account required."
+description: "Access thousands of AI microservices — image generation, web search, financial data, translation, compute, travel, audio — paid per-call in USDC via x402. No account required."
 tags: [ai, microservices, image, text, finance, search, compute, travel, audio, x402]
 name: litebeam
 version: 0.1.0
@@ -17,7 +17,7 @@ risk: []
 
 # Litebeam Plugin
 
-[Litebeam](https://litebeam.xyz) is a universal AI microservice router. One x402 call gives access to 12,000+ services across image generation, translation, web search, financial data, compute, travel, and audio. Litebeam runs a real-time auction across vendors and routes to the best available option — your Base Account wallet pays per-call in USDC, only on successful delivery.
+[Litebeam](https://litebeam.xyz) is a universal AI microservice router. One x402 call gives access to thousands of services across image generation, translation, web search, financial data, compute, travel, and audio. Litebeam runs a real-time auction across vendors and routes to the best available option — your Base Account wallet pays per-call in USDC, only on successful delivery.
 
 **No account required.** No signup, no API key, no new wallet. Your existing Base Account handles payment.
 
