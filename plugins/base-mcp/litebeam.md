@@ -3,7 +3,7 @@ title: "Litebeam"
 description: "Access thousands of AI microservices — image generation, web search, financial data, translation, compute, travel, audio — paid per-call in USDC via x402. No account required."
 tags: [ai, microservices, image, text, finance, search, compute, travel, audio, x402]
 name: litebeam
-version: 0.1.0
+version: 0.2.0
 integration: x402
 chains: [base]
 requires:
@@ -17,41 +17,42 @@ risk: []
 
 # Litebeam Plugin
 
-[Litebeam](https://litebeam.xyz) is a universal AI microservice router. One x402 call gives access to thousands of services across image generation, translation, web search, financial data, compute, travel, and audio. Litebeam runs a real-time auction across vendors and routes to the best available option — your Base Account wallet pays per-call in USDC, only on successful delivery.
+> [!IMPORTANT]
+> Complete the short Base MCP onboarding flow defined in `SKILL.md` before making any Litebeam call. The user's Base mainnet wallet is required — confirmed via `get_wallets` before the first service call.
 
-**No account required.** No signup, no API key, no new wallet. Your existing Base Account handles payment.
+## Overview
 
-## Detection
+[Litebeam](https://litebeam.xyz) is a universal AI microservice router. One call gives access to thousands of services — image generation, translation, web search, financial data, compute, travel, and audio — without managing vendor accounts, API keys, or payment integrations. Litebeam runs a real-time auction across vendors and routes to the best available option.
 
-Litebeam uses Base MCP's built-in x402 tools (`initiate_x402_request`, `complete_x402_request`). No additional MCP server is needed — if those tools are available, Litebeam is ready to use.
+**No account required.** Payment is per-call in USDC via x402, drawn directly from the user's Base Account wallet. The user sees the exact price and approves each charge before it settles.
 
-## Onboarding
+**Chain:** Base mainnet (chainId `8453`).
 
-Before making a service call:
+## Surface Routing
 
-1. Call `get_wallets` and confirm the user has an active Base mainnet wallet
-2. Let the user know they will see a USDC approval prompt for each call
-3. Optionally, call `GET https://litebeam.xyz/api/discover` to show available service categories
+Litebeam uses Base MCP's native x402 tools (`initiate_x402_request` / `complete_x402_request`). These tools handle the HTTP call and payment flow directly — they are not subject to the `web_request` allowlist.
 
-## Calling a Service
+| Capability | Path |
+|-----------|------|
+| Any service call (image, search, translation, finance, etc.) | `initiate_x402_request` → user approves → `complete_x402_request` |
+| Browse available services (optional pre-call discovery) | Harness HTTP tool if available, else `web_request` GET against `litebeam.xyz`. |
 
-### Step 1 — Initiate the request
+**Prerequisite:** The user must have an active Base mainnet wallet with USDC balance. Confirm with `get_wallets` before the first call. The discover endpoint (`litebeam.xyz`) must be in the `web_request` allowlist for service browsing on chat-only surfaces — skip the discover step if the allowlist rejects it.
 
-Call `initiate_x402_request`:
+## Endpoints
 
-| Parameter    | Value |
-|---|---|
-| `url`        | `https://litebeam.xyz/api/call` |
-| `method`     | `POST` |
-| `maxPayment` | `"0.10"` USDC (ceiling — actual charge is shown before approval) |
-| `body`       | See below |
+Base URL: `https://litebeam.xyz/api`
 
-**Body — natural language (recommended):**
+### `POST /call` — route a service call (x402)
+
+This endpoint is x402-gated. Use `initiate_x402_request`, not `web_request`.
+
+**Natural language (recommended):**
 ```json
 { "request": "generate a photorealistic image of a mountain at sunset" }
 ```
 
-**Body — structured:**
+**Structured (explicit capability):**
 ```json
 {
   "capability": "image_generation",
@@ -59,28 +60,39 @@ Call `initiate_x402_request`:
 }
 ```
 
-The 402 response includes the exact USDC price and which vendor was selected. Base MCP presents this to the user for approval.
+Parameters:
 
-### Step 2 — Complete the request
+| Field | Type | Description |
+|---|---|---|
+| `request` | string | Natural language description. Litebeam routes automatically. |
+| `capability` | string | Explicit capability keyword (e.g. `image_generation`). Skips AI routing. |
+| `params` | object | Vendor-specific parameters merged with AI-extracted params. |
+| `max_price_usdc` | number | Maximum price per call in USDC. Litebeam will not route above this. |
 
-After the user approves the payment in Base Account:
+The 402 response includes the exact USDC price and selected vendor. `initiate_x402_request` presents this to the user for approval. After approval, `complete_x402_request` settles the payment and returns the result.
 
-```
-complete_x402_request(requestId)
-```
-
-The response contains:
-
+**Success response (from `complete_x402_request`):**
 ```json
 {
-  "result":     "<service output — text, image URL, JSON data, etc.>",
-  "cost_usdc":  0.019,
-  "routed_to":  "<vendor name>",
+  "result": "<service output — text, image URL, JSON data, etc.>",
+  "cost_usdc": 0.019,
+  "routed_to": "<vendor name>",
   "latency_ms": 1240
 }
 ```
 
-## Service Capabilities
+### `GET /discover` — browse available services (optional)
+
+No auth required.
+
+```text
+GET https://litebeam.xyz/api/discover
+GET https://litebeam.xyz/api/discover?category=finance
+```
+
+Returns total service count and per-category breakdowns with price ranges. Use before a session to show the user what's available, or when they ask what Litebeam supports.
+
+## Capabilities
 
 Pass a `capability` key or describe the task in `request` — Litebeam's routing AI finds the best vendor.
 
@@ -100,59 +112,80 @@ Pass a `capability` key or describe the task in `request` — Litebeam's routing
 
 For anything not listed, use the `request` field with a natural language description.
 
-## Examples
+## Orchestration
 
-**Image generation:**
-```json
-{ "request": "generate a photorealistic image of a futuristic city at night" }
-```
-Typical cost: $0.019 · Typical latency: 3–8s
-
-**ETH price:**
-```json
-{ "request": "What is the current price of ETH?" }
-```
-Typical cost: $0.003 · Typical latency: <1s
-
-**Web search:**
-```json
-{ "capability": "web_search", "params": { "query": "latest AI news June 2026" } }
-```
-Typical cost: $0.010 · Typical latency: 1–2s
-
-**Flight search:**
-```json
-{ "request": "find flights from New York to London next Friday" }
-```
-Typical cost: $0.006 · Typical latency: 2–5s
-
-## Discover Available Services
-
-Before committing to a call, you can show the user what's available:
-
-```
-GET https://litebeam.xyz/api/discover
+```text
+1. get_wallets → confirm Base mainnet wallet is active and has USDC balance
+2. Let the user know they will see a USDC approval prompt for each call
+3. initiate_x402_request (see parameters below)
+4. Surface the price and vendor from the 402 response — do not auto-approve
+5. User approves in Base Account
+6. complete_x402_request(requestId)
+7. Return result to the user with cost and vendor shown
 ```
 
-Returns total service count and per-category breakdowns with price ranges.
+### `initiate_x402_request` parameters
 
-Filter by category:
-```
-GET https://litebeam.xyz/api/discover?category=finance
-```
+| Parameter | Value |
+|---|---|
+| `url` | `https://litebeam.xyz/api/call` |
+| `method` | `POST` |
+| `maxPayment` | `"0.10"` USDC (ceiling — actual charge shown before approval) |
+| `body` | See [Endpoints](#endpoints) above |
 
-## Orchestration Rules
+Never skip step 4. Always show the price from the 402 response before the user approves — do not auto-approve.
 
-1. Always call `get_wallets` first and confirm Base mainnet is available.
-2. Show the price from the 402 response before the user approves — do not auto-approve.
-3. `maxPayment` is a ceiling; the actual charge will always be ≤ this amount.
-4. If `complete_x402_request` returns an error, the user was not charged — inform them and retry if appropriate.
-5. For operations that may cost more than $0.05, confirm the budget with the user first.
-6. Never pass private keys, wallet mnemonics, or personal credentials in the request body.
+For calls that may cost more than $0.05, confirm the budget with the user before calling `initiate_x402_request`.
 
-## Safety
+If `complete_x402_request` returns an error, the user was not charged — inform them and offer to retry.
 
-- **Charge-on-success only:** Litebeam does not charge if the vendor fails to deliver.
-- **Exact price before approval:** the 402 response shows the exact price. `maxPayment` is a ceiling only.
-- **Base mainnet only:** payments are USDC on Base (chainId 8453).
-- **No data retention:** Litebeam does not store request content beyond what is needed for routing.
+## Example Prompts
+
+**Generate an image**
+1. `get_wallets` → confirm Base mainnet is active.
+2. `initiate_x402_request` POST `https://litebeam.xyz/api/call` with `{ "request": "generate a photorealistic image of a futuristic city at night" }`, `maxPayment: "0.10"`.
+3. Show the user the price and vendor from the 402 response. Wait for approval.
+4. `complete_x402_request(requestId)`.
+5. Return the image URL from `result`.
+
+**Get the current price of a token**
+1. `get_wallets` → confirm Base mainnet is active.
+2. `initiate_x402_request` POST `https://litebeam.xyz/api/call` with `{ "request": "What is the current price of ETH?" }`, `maxPayment: "0.10"`.
+3. Show price (~$0.003) and vendor. Wait for approval.
+4. `complete_x402_request(requestId)`.
+5. Return the price data.
+
+**Search the web**
+1. `get_wallets` → confirm Base mainnet is active.
+2. `initiate_x402_request` POST `https://litebeam.xyz/api/call` with `{ "capability": "web_search", "params": { "query": "latest AI news" } }`, `maxPayment: "0.10"`.
+3. Show price (~$0.010) and vendor. Wait for approval.
+4. `complete_x402_request(requestId)`.
+5. Return URLs and snippets from `result`.
+
+**Find flights**
+1. `get_wallets` → confirm Base mainnet is active.
+2. `initiate_x402_request` POST `https://litebeam.xyz/api/call` with `{ "request": "find flights from New York to London next Friday" }`, `maxPayment: "0.10"`.
+3. Show price (~$0.006) and vendor. Wait for approval.
+4. `complete_x402_request(requestId)`.
+5. Return flight options from `result`.
+
+**What services does Litebeam support?**
+1. If harness HTTP tool is available: GET `https://litebeam.xyz/api/discover`.
+2. Else: `web_request` GET `https://litebeam.xyz/api/discover` (requires allowlist).
+3. Show total service count and per-category breakdown with price ranges.
+
+## Risks & Warnings
+
+- **Charge-on-success only.** Litebeam does not charge if the vendor fails to deliver. If `complete_x402_request` returns an error, the user was not charged.
+- **Always show price before approval.** The 402 response shows the exact USDC cost. `maxPayment` is a ceiling only — never tell the user the charge will be `maxPayment`.
+- **USDC balance required.** If the user has no USDC on Base mainnet, `complete_x402_request` will fail. Surface this clearly rather than retrying.
+- **Budget awareness.** For operations above $0.05, confirm budget before initiating. Direct mode has no server-side spend controls — the user is responsible for their own limits.
+- **No data retention.** Litebeam does not store request content beyond what is needed for routing.
+
+## Notes
+
+- USDC on Base: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
+- Base mainnet chainId: `8453`
+- `maxPayment` is denominated in USDC as a string (e.g. `"0.10"`), not wei.
+- Natural language `request` is preferred over structured `capability` for multi-step or ambiguous tasks; use `capability` only when the service type is unambiguous.
+- For anything not in the capability table, use natural language — Litebeam's AI routing handles it.
