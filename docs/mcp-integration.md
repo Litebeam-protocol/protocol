@@ -113,6 +113,7 @@ await client.callTool('call_service', {
 |---|---|---|
 | `request` | `string` | Natural language description. litebeam uses AI to classify, find the best vendor, and format the call. |
 | `capability` | `string` | Explicit capability keyword (e.g. `image_generation`, `translation`). Skips AI routing. |
+| `service_id` | `string` | Address a specific service directly (from a prior response's `handle`). Skips AI routing and the routing fee — see *Reuse by handle* below. |
 | `params` | `object` | Parameters merged with AI-extracted params and passed to the vendor. |
 | `max_price_usdc` | `number` | Maximum price per call in USDC. litebeam will not route above this price. |
 | `protocol` | `"x402" \| "mpp"` | Force a specific protocol. Omit to let litebeam choose. |
@@ -132,8 +133,30 @@ await client.callTool('call_service', {
   "vendor_endpoint": "https://replicate.com/api/generate",
   "latency_ms": 412,
   "candidates_evaluated": 5,
-  "ai_routed": true
+  "ai_routed": true,
+  "handle": {
+    "service_id": "1875014f-3ef4-4859-82ac-aaa1e0cea096",
+    "name": "Stable Diffusion XL",
+    "provider": "replicate.com",
+    "category": "image",
+    "protocol": "x402",
+    "price_usdc": 0.005,
+    "reuse_hint": "Reuse this exact service without re-routing by calling call_service with service_id: \"1875014f-...\" (no AI routing fee)."
+  }
 }
+```
+
+**Reuse by handle.** *Discover by intent once; address by handle thereafter.* Every
+`call_service` response includes a `handle`. To call the same service again without paying
+for AI routing, pass `handle.service_id` back as `service_id`:
+
+```typescript
+// First call: discover by intent (AI routing)
+const first = await client.callTool('call_service', { request: 'price of bitcoin in USD' });
+const { service_id } = first.handle;
+
+// Reuse: address the same service directly — no routing, no routing fee
+await client.callTool('call_service', { service_id, request: 'price of bitcoin in USD' });
 ```
 
 ### `list_services`
