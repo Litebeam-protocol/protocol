@@ -2,6 +2,8 @@
 
 litebeam exposes a standard Model Context Protocol server. Any MCP-compatible agent or client can connect with a single config block. Your API key authenticates the session and routes all calls to your agent's wallet.
 
+Once connected, read the [Agent guide](./agent-guide.md) for the usage contract — how to call litebeam well (atomic intents, handle reuse, routing receipts, constraints). It is also available in-band via the `get_started` tool, the `litebeam://guide` MCP resource, or `https://litebeam.xyz/llms.txt`.
+
 ## Standard MCP config
 
 Add the following to your agent or client's MCP server configuration:
@@ -169,4 +171,12 @@ await client.callTool('list_services', {
   protocol: 'x402',
   limit: 20
 });
+```
+
+### `get_started`
+
+Returns the agent usage contract — how to call litebeam well (one capability per call, reuse handles by `service_id`, read the `routing_receipt`, attach constraints, rate results). Read it once before building a workflow. The same text is the `litebeam://guide` MCP resource and `https://litebeam.xyz/llms.txt`.
+
+```typescript
+await client.callTool('get_started', {});
 ```
