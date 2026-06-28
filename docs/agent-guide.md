@@ -138,13 +138,45 @@ call_service(request: "transcribe this audio clip",
              max_price_usdc: 0.01, protocol: "x402")
 ```
 
+**D. A long job → submit, then resume by handle (don't re-send the request).**
+
+```
+call_service(request: "generate a 5-second video of a hamster")
+  → { "type": "job", "job_handle": "job_…", "poll_after_ms": 3000 }
+// wait poll_after_ms, then resume the SAME job — never re-send the request:
+call_service(job_handle: "job_…")
+  → { "type": "result", "result": { "video_url": "…" } }
+```
+
+---
+
+## Async jobs (long-running work)
+
+Some services can't finish inside one response (video, long compute). When that
+happens `call_service` returns a **job** instead of a result:
+
+```
+{ "type": "job", "job_handle": "job_…", "status": "running",
+  "poll_after_ms": 3000, "cost_usdc": 0.05, "transaction_id": "…" }
+```
+
+- **Resume by handle.** Call `call_service(job_handle: "job_…")` to poll/fetch. It
+  returns `{type:"job"}` while still running (wait `poll_after_ms`, then call again)
+  and `{type:"result"}` when done. Resuming hits the **same vendor** that started the
+  job — it never re-routes.
+- **Never re-send the original `request` to "check status."** That starts NEW work on
+  a possibly different vendor and charges you again. Resume only by `job_handle`.
+- You pay once, at submit (`cost_usdc`); status polls are free. `get_quote(job_handle)`
+  confirms a resume is free.
+- Fast calls are unaffected — they still return `{type:"result"}` inline.
+
 ---
 
 ## Tooling quick reference
 
 | Tool | Use it to |
 |------|-----------|
-| `call_service` | Run one capability (by `request`, or by `service_id` to reuse a handle). |
+| `call_service` | Run one capability (`request`), reuse a vendor (`service_id`), or resume a long job (`job_handle`). |
 | `list_services` | Browse/search the directory; each row has a `service_id` you can reuse. |
 | `get_quote` | Direct mode: get price + signing params before paying. |
 | `get_balance` | Managed mode: check wallet balance and deposit address. |

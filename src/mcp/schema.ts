@@ -52,6 +52,16 @@ export interface CallServiceInput {
    * the configured approval threshold.
    */
   hitl_override_id?: string;
+
+  /**
+   * Resume a running async job. Pass the `job_handle` returned by a prior
+   * call_service that responded with `{ type: "job" }`. litebeam polls/fetches the
+   * job on the SAME vendor that started it — it never re-routes. Do not pass
+   * `request`/`capability` alongside it; this is "resume this job", not "start new
+   * work" (re-sending the request would start a fresh job on a possibly different
+   * vendor and charge again).
+   */
+  job_handle?: string;
 }
 
 export interface CallServiceResult {
@@ -101,6 +111,52 @@ export interface ServiceHandle {
   /** Human-readable hint describing how to reuse this handle */
   reuse_hint: string;
 }
+
+// ── async jobs ──────────────────────────────────────────────────────────────────
+
+/** Normalized job status. Terminal = succeeded | refunded | expired | rejected | failed. */
+export type JobStatus =
+  | 'pending'      // accepted, not yet running
+  | 'running'      // in progress
+  | 'needs_input'  // blocked on the agent (reserved)
+  | 'succeeded'
+  | 'refunded'     // escrow returned (reserved for x402)
+  | 'expired'
+  | 'rejected'
+  | 'failed';
+
+/**
+ * Returned by call_service when the vendor cannot finish inside one response
+ * (e.g. video generation, long compute). The submit was already charged
+ * (`cost_usdc`). Resume by calling `call_service({ job_handle })` until it returns
+ * a `{ type: "result" }` payload; resuming polls the SAME vendor and never
+ * re-routes. Status polls are free. A fast call returns a result inline as usual —
+ * you only receive a job when the work genuinely will not fit in one response.
+ */
+export interface JobResponse {
+  type: 'job';
+  /** Opaque handle — pass back as `call_service({ job_handle })` to poll/fetch. */
+  job_handle: string;
+  /** Normalized job status (terminal statuses end the job). */
+  status: JobStatus;
+  /** Vendor that took the job — the same one every resume hits. */
+  vendor_name: string;
+  /** Suggested wait, in ms, before the next poll. */
+  poll_after_ms: number;
+  /** Submit cost — already charged at submit. */
+  cost_usdc: number;
+  /** Transaction id for the submit. */
+  transaction_id: string;
+  /** Optional progress 0–100 when the vendor exposes it. */
+  progress?: number;
+}
+
+/**
+ * Any call_service response. A sync success keeps all of `CallServiceResult`'s
+ * top-level fields for backward-compat (and may carry an ignorable `type: "result"`);
+ * `JobResponse` is the async case; `HitlRequiredResponse` is the approval case.
+ */
+export type CallServiceResponse = CallServiceResult | JobResponse | HitlRequiredResponse;
 
 // ── list_services ─────────────────────────────────────────────────────────────
 
