@@ -14,6 +14,14 @@ litebeam uses this same client internally. The source is published here so the c
 
 No wallet connect popups, no pending transactions from the client's perspective. The server calls `USDC.transferWithAuthorization()` on-chain to actually move funds.
 
+## Using litebeam itself as an x402 merchant
+
+litebeam's `POST https://litebeam.xyz/api/call` speaks this exact flow, so any x402 client (this one, Base MCP, x402-fetch, AgentKit) gets the full loop with no MCP connection:
+
+1. **Discover** — `GET /api/recommend?q=<what you need>&wallet=0x<your addr>` (free, no key): ranked shortlist with `service_id`, reputation, price estimate, and each service's full `param_schema` + `param_example`.
+2. **Quote** — `POST /api/call {"service_id": "<pick>"}` → `402`. The offer is self-describing: its `extensions.bazaar` block carries litebeam's input format with the quoted service's param schema nested at `body.params`, plus a worked example.
+3. **Pay + execute** — resubmit with `params` and the `X-PAYMENT` header. Params are validated against the vendor schema **before** you are charged — missing required fields return a `400` teaching error (with the schema attached), uncharged. Pinned calls carry no routing/inference fee.
+
 ## Setup
 
 ```bash

@@ -16,7 +16,8 @@ For agents using their own Base wallet (no API key required).
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/call` | Call a service. Body: `{ request, params?, max_price_usdc? }`. Without `X-Payment` header: returns `402` with price offer `{ estimated_cost_usdc, routed_to, accepts: [...] }`. With `X-Payment` header (base64-encoded EIP-3009 signed USDC transfer): executes call and returns `{ result, routed_to, cost_usdc, tx_hash, latency_ms }`. |
+| `POST` | `/api/call` | Call a service. Body: `{ request \| capability \| service_id, params?, max_price_usdc?, validate? }` — `service_id` pins an exact vendor (deterministic, no routing fee). Without `X-Payment` header: returns `402` with the price offer `{ estimated_cost_usdc, routed_to, accepts: [...], extensions.bazaar }`; the bazaar extension carries the quoted service's `param_schema` and a worked example. With `X-Payment` header (base64-encoded EIP-3009 signed USDC transfer): executes and returns `{ result, routed_to, cost_usdc, tx_hash, latency_ms }`. Pinned calls are validated against the vendor schema BEFORE charging — missing required fields return a `400` teaching error with the schema attached, uncharged; `validate: false` skips. |
+| `GET`/`POST` | `/api/recommend` | Ranked shortlist without executing or paying — the REST mirror of `call_service(mode: "recommend")`. `q` (GET) or `{ request }` (POST), optional `max_price_usdc`, optional `wallet` (links the discovery to your later payment). Free, rate-limited, no auth. Entries carry reputation, price estimate, latency p50, `cost_model`, and the full `param_schema` + `param_example`. Execute a pick via `POST /api/call` with its `service_id`. |
 | `GET` | `/api/discover` | Discover available services. No auth required. Without params: category summary with counts and prices. With `q` (keyword) and/or `category` + `limit`: matching services list. |
 
 ---
