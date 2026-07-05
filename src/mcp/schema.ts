@@ -29,10 +29,28 @@ export interface CallServiceInput {
   capability?: string;
 
   /**
+   * Direct service UUID (from list_services, a prior result's `handle.service_id`,
+   * or a quote). Bypasses AI intent routing entirely — no inference fee,
+   * deterministic vendor.
+   */
+  service_id?: string;
+
+  /**
    * Parameters merged with AI-extracted params and passed directly to the
    * vendor. Useful for overriding or supplementing AI-extracted values.
+   * Pass params FLAT (e.g. `{ "location": "Tokyo" }`) — litebeam builds the
+   * vendor request from them.
    */
   params?: Record<string, unknown>;
+
+  /**
+   * Default true. litebeam validates `params` against the vendor's published
+   * schema BEFORE settling: a call missing a required field (or containing an
+   * obvious typo of a known field) is rejected with a teaching error and is
+   * NOT charged. Anything else warns and proceeds (`param_warnings` on the
+   * result). Set false to skip validation and send params as-is.
+   */
+  validate?: boolean;
 
   /**
    * Maximum price per call in USDC. litebeam will not route to vendors above
@@ -93,6 +111,12 @@ export interface CallServiceResult {
    * — no AI routing, no routing fee. Discover by intent once; reuse by handle thereafter.
    */
   handle?: ServiceHandle;
+  /**
+   * Advisory schema findings from pre-charge param validation (type mismatches,
+   * unknown fields, enum violations). The call proceeded anyway — only missing
+   * required fields / typo-class violations block, and those are never charged.
+   */
+  param_warnings?: string[];
 }
 
 export interface ServiceHandle {
@@ -110,6 +134,66 @@ export interface ServiceHandle {
   price_usdc: number;
   /** Human-readable hint describing how to reuse this handle */
   reuse_hint: string;
+}
+
+// ── get_quote ─────────────────────────────────────────────────────────────────
+
+export interface GetQuoteInput {
+  /** Natural language description of what you need (AI-routed quote). */
+  request?: string;
+  /** Direct service UUID — quotes exactly this service, no routing. */
+  service_id?: string;
+  /** Capability keyword (e.g. "image_generation"). */
+  capability?: string;
+  /** Maximum price per call in USDC. */
+  max_price_usdc?: number;
+  /** Force a specific payment protocol. */
+  protocol?: 'x402' | 'mpp';
+  /** Quote a resume of a running async job (always free — status polls cost nothing). */
+  job_handle?: string;
+}
+
+/**
+ * A quote never executes or charges. Direct-mode agents sign the returned value;
+ * all agents can use the param fields to construct correct params BEFORE paying.
+ */
+export interface GetQuoteResult {
+  /** Total cost of the call in USDC (vendor price + litebeam fee). */
+  estimated_cost_usdc: number;
+  /** Amount to sign, in micro-USDC (6 decimals), as a string. */
+  value: string;
+  /** litebeam operator address — the `to` of the USDC TransferWithAuthorization. */
+  operator_address: string;
+  /** USDC contract address on Base. */
+  usdc_address: string;
+  network: 'base';
+  chain_id: 8453;
+  valid_after: string;
+  valid_before: string;
+  valid_for_seconds: number;
+  /** Name of the service that would serve this call. */
+  service: string;
+  provider: string;
+  /**
+   * HTTP verb the vendor's endpoint expects, when known (probe-observed or
+   * registry-listed).
+   */
+  method?: string;
+  /**
+   * The vendor's published parameter schema (JSON Schema for the FLAT params
+   * object you pass to call_service), when the vendor publishes one via the
+   * x402 bazaar extension. Fields in `required` must be present or call_service
+   * rejects before charging (see CallServiceInput.validate).
+   */
+  param_schema?: Record<string, unknown>;
+  /** A working example params object observed from the vendor, when available. */
+  param_example?: Record<string, unknown>;
+  /** Vendor docs excerpt describing the endpoint, when no structured schema exists. */
+  param_guidance?: string;
+  /** How to pass params (present when param_schema is). */
+  params_note?: string;
+  /** Step-by-step EIP-3009 signing instructions for Direct mode. */
+  signing_instructions: string;
 }
 
 // ── async jobs ──────────────────────────────────────────────────────────────────

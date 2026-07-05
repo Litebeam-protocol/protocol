@@ -65,6 +65,15 @@ Pass machine constraints with the intent — litebeam enforces them:
 
 Do not encode task logic in the request; describe the capability and bound it.
 
+**Get params right before paying.** `get_quote(service_id: …)` returns the
+vendor's published `param_schema` (JSON Schema), a working `param_example`, and
+the HTTP `method` when the vendor publishes them (`param_guidance` docs text
+otherwise). Pass params FLAT (e.g. `params: {"location": "Tokyo"}`) — litebeam
+builds the vendor request. `call_service` validates your params against that
+schema BEFORE charging: a call missing a required field is rejected with a
+teaching error and you are NOT charged. Pass `validate: false` to send your
+params as-is.
+
 ### 4. Read the routing receipt
 
 Every `call_service` result carries a machine-readable receipt so you can make
@@ -178,7 +187,7 @@ happens `call_service` returns a **job** instead of a result:
 |------|-----------|
 | `call_service` | Run one capability (`request`), reuse a vendor (`service_id`), or resume a long job (`job_handle`). |
 | `list_services` | Browse/search the directory; each row has a `service_id` you can reuse. |
-| `get_quote` | Direct mode: get price + signing params before paying. |
+| `get_quote` | Get price + signing params before paying (Direct mode) — plus the vendor's `param_schema` + `param_example` when published. |
 | `get_balance` | Managed mode: check wallet balance and deposit address. |
 | `rate_result` | Rate a `transaction_id` to improve your routing. |
 | `get_started` | Re-read this contract in-band. |
