@@ -93,10 +93,28 @@ Also always present: `cost_usdc` (total charged), `vendor_cost_usdc` /
 `litebeam_fee_usdc` (breakdown), `latency_ms`, `transaction_id`.
 
 **When confidence is low**, litebeam will *not* silently invoke a likely-wrong
-service. Instead it returns the interpreted intent plus the top candidate
-handles and charges nothing. Pick one and re-call with its `service_id`, or
-rephrase the request. A silent confident-wrong call is the failure mode this
-prevents — treat a candidate list as litebeam asking you to choose.
+service. Instead it returns `{"type": "candidates"}` — the interpreted intent
+plus a ranked shortlist — and charges nothing. Pick one and re-call with its
+`service_id`, or rephrase the request. A silent confident-wrong call is the
+failure mode this prevents — treat a candidate list as litebeam asking you to
+choose.
+
+**You can also ask for the shortlist yourself.** `call_service(request,
+mode: "recommend")` never executes and never charges: it returns
+`{"type": "candidates", "shortlist": [...]}` ranked by reputation × price ×
+latency, each entry carrying `service_id` (the handle to execute it),
+`price_estimate_usdc` (an ESTIMATE — the binding quote is the vendor 402 at
+invoke), `reputation`, `latency_ms_p50`, `cost_model` (`single` |
+`submit+poll` | `escrow`, when litebeam has observed it), and
+`required_params` when the vendor publishes a schema. Inspect a pick with
+`get_quote(service_id)` (full param schema + binding price), then execute with
+`call_service(service_id: …[, params])` — that invoke hits exactly the vendor
+you picked, never re-routes, and returns `{"type":"job"}` if the vendor is
+async. Discovery is free and rate-limited; it works without an API key. Use it
+when you have more context than the router — your own eval, downstream
+constraints, prior results — and want to make the pick yourself. Plain
+`call_service(request)` is unchanged: it never returns a shortlist unless
+confidence is low.
 
 ### 5. Rate results to improve your routing
 

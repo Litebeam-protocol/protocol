@@ -80,6 +80,17 @@ export interface CallServiceInput {
    * vendor and charge again).
    */
   job_handle?: string;
+
+  /**
+   * Default "auto": litebeam picks and executes the best service (when routing
+   * confidence is low it returns `{ type: "candidates" }` instead of charging).
+   * "recommend": no execution, no charge — returns a ranked shortlist
+   * (`CandidatesResponse`); inspect a pick with get_quote(service_id), then
+   * execute it with call_service(service_id). Discovery is free, rate-limited,
+   * and works without an API key. Plain call_service(request) never returns a
+   * shortlist unless confidence is low.
+   */
+  mode?: 'auto' | 'recommend';
 }
 
 export interface CallServiceResult {
@@ -235,12 +246,63 @@ export interface JobResponse {
   progress?: number;
 }
 
+// ── recommendation shortlist ─────────────────────────────────────────────────
+
+/**
+ * One ranked option in a shortlist. `fulfillment` + `cost_model` let async/escrow
+ * vendors sit in the same list as sync x402 vendors.
+ */
+export interface ShortlistEntry {
+  /** Stable id — execute this entry with call_service(service_id). */
+  service_id: string;
+  vendor_name: string;
+  /** What the service does (truncated description). */
+  what: string;
+  /** 0–100. Verifier-sourced clean reputation when available. */
+  reputation: number;
+  /** Median observed latency over the last 30 days; null when unobserved. */
+  latency_ms_p50: number | null;
+  protocol: string;
+  /** ESTIMATE — the binding quote is the vendor's 402 at invoke (use get_quote). */
+  price_estimate_usdc: number;
+  /** 'litebeam' = litebeam settles for you; 'self_serve' = you run it (e.g. ACP). */
+  fulfillment: 'litebeam' | 'self_serve';
+  /**
+   * How this vendor charges, LEARNED from observed settlements — omitted for
+   * vendors litebeam has not settled with yet. 'submit+poll' vendors return
+   * `{ type: "job" }` when invoked.
+   */
+  cost_model?: 'single' | 'submit+poll' | 'escrow';
+  /** Service handle — same value as service_id. */
+  handle: string;
+  /** Required param names, when the vendor publishes a schema (full schema via get_quote). */
+  required_params?: string[];
+  /** True when get_quote(service_id) will return a full param_schema. */
+  param_schema_available?: boolean;
+}
+
+/**
+ * Returned by call_service(mode: "recommend"), and under mode "auto" when routing
+ * confidence is below the threshold. Nothing was executed or charged. Pick an
+ * entry and execute it via call_service(service_id) — that invoke hits exactly
+ * the picked vendor and never re-routes.
+ */
+export interface CandidatesResponse {
+  type: 'candidates';
+  shortlist: ShortlistEntry[];
+  /** What litebeam understood the ask to be (echoes your request in recommend mode). */
+  interpreted_intent: string;
+  /** Human/agent-readable instructions for what to do with the shortlist. */
+  next_step?: string;
+}
+
 /**
  * Any call_service response. A sync success keeps all of `CallServiceResult`'s
  * top-level fields for backward-compat (and may carry an ignorable `type: "result"`);
- * `JobResponse` is the async case; `HitlRequiredResponse` is the approval case.
+ * `JobResponse` is the async case; `CandidatesResponse` is the shortlist case
+ * (recommend mode / low confidence); `HitlRequiredResponse` is the approval case.
  */
-export type CallServiceResponse = CallServiceResult | JobResponse | HitlRequiredResponse;
+export type CallServiceResponse = CallServiceResult | JobResponse | CandidatesResponse | HitlRequiredResponse;
 
 // ── list_services ─────────────────────────────────────────────────────────────
 
