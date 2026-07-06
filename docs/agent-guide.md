@@ -27,7 +27,6 @@ multiple services only when a single advertised product does so internally.
 ## The five rules
 
 ### 1. One capability per call (atomic intents)
-
 Send exactly one capability per `call_service`. A request that names two
 capabilities ("translate this and then summarize it") should be **two calls**.
 Atomic intents route accurately; compound intents mis-route. If you send a
@@ -35,11 +34,19 @@ compound request, litebeam may return a breakdown hint instead of a result —
 split it and call each part.
 
 ### 2. Discover by intent, then address by handle
+**For a NEW capability, use the `discover` tool.** `discover(request: "…")`
+returns a ranked shortlist — `recommended` is litebeam's pick (taking it is
+always a valid strategy), and every entry carries the `service_id` to execute
+it. A small flat discovery fee applies (shown in the response) and is
+**credited back automatically** when you execute a listed candidate within the
+credit window — discover-then-buy costs nothing extra. When the catalog cannot
+serve the request, discover returns `{"type": "no_coverage"}` and you are
+**not charged**: trust it. Entries labeled `fit: "partial"` are adjacent
+capabilities, not answers — calling them will not fulfil your request.
 
-The first call to a capability is a **discovery** — pass `request` (natural
-language) and litebeam runs full AI routing (a small inference fee, ~$0.001).
-Every response includes a **`handle`** — a reusable address for the chosen
-service:
+You can also pass `request` straight to `call_service` and litebeam runs full
+AI routing (a small inference fee, ~$0.001). Every response includes a
+**`handle`** — a reusable address for the chosen service:
 
 ```json
 "handle": {
@@ -56,9 +63,7 @@ faster. Store the handle for capabilities you call repeatedly — this is the
 recommended pattern for production agents with known workflows.
 
 ### 3. Attach your constraints, not your reasoning
-
 Pass machine constraints with the intent — litebeam enforces them:
-
 - `max_price_usdc` — litebeam will not route above this price per call.
 - `protocol` — force `x402` or `mpp`; omit to let litebeam choose.
 - `params` — explicit parameters merged with litebeam's extracted ones.
@@ -75,13 +80,12 @@ teaching error and you are NOT charged. Pass `validate: false` to send your
 params as-is.
 
 ### 4. Read the routing receipt
-
 Every `call_service` result carries a machine-readable receipt so you can make
 informed reuse decisions:
 
 ```json
 "routing_receipt": {
-  "selection": "ai",
+  "selection": "ai",          // ai | direct | score
   "confidence": { "score": 0.82, "level": "high", "reason": "…" },
   "considered": 7,
   "alternatives": [ { "name": "…", "provider": "…", "price_usdc": 0.003 } ],
@@ -92,6 +96,15 @@ informed reuse decisions:
 Also always present: `cost_usdc` (total charged), `vendor_cost_usdc` /
 `litebeam_fee_usdc` (breakdown), `latency_ms`, `transaction_id`.
 
+**Read `result_check` — litebeam's own verdict on what you paid for.** Every
+paid result carries `result_check: {matched_intent, note?}`. When
+`matched_intent` is `false`, the data likely does not answer your request:
+STOP, re-discover, and do not escalate to another blind call — wrong-typed data
+with an HTTP 200 is the classic way agents burn money. On a direct
+`service_id` call the check is advisory (you chose the vendor; litebeam
+executes as instructed) and runs only when you include `request` alongside —
+include it.
+
 **When confidence is low**, litebeam will *not* silently invoke a likely-wrong
 service. Instead it returns `{"type": "candidates"}` — the interpreted intent
 plus a ranked shortlist — and charges nothing. Pick one and re-call with its
@@ -99,25 +112,35 @@ plus a ranked shortlist — and charges nothing. Pick one and re-call with its
 failure mode this prevents — treat a candidate list as litebeam asking you to
 choose.
 
-**You can also ask for the shortlist yourself.** `call_service(request,
-mode: "recommend")` never executes and never charges: it returns
-`{"type": "candidates", "shortlist": [...]}` ranked by reputation × price ×
-latency, each entry carrying `service_id` (the handle to execute it),
-`price_estimate_usdc` (an ESTIMATE — the binding quote is the vendor 402 at
-invoke), `reputation`, `latency_ms_p50`, `cost_model` (`single` |
-`submit+poll` | `escrow`, when litebeam has observed it), and
-`required_params` when the vendor publishes a schema. Inspect a pick with
-`get_quote(service_id)` (full param schema + binding price), then execute with
-`call_service(service_id: …[, params])` — that invoke hits exactly the vendor
-you picked, never re-routes, and returns `{"type":"job"}` if the vendor is
-async. Discovery is free and rate-limited; it works without an API key. Use it
-when you have more context than the router — your own eval, downstream
-constraints, prior results — and want to make the pick yourself. Plain
-`call_service(request)` is unchanged: it never returns a shortlist unless
-confidence is low.
+**Ask for the shortlist yourself with `discover`.** `discover(request)` never
+executes: it returns `{"type": "candidates", "recommended": "…", "shortlist":
+[...]}` ranked by reputation × price × latency, each entry carrying
+`service_id` (the handle to execute it), `price_estimate_usdc` (an ESTIMATE —
+the binding quote is the vendor 402 at invoke), `reputation`,
+`latency_ms_p50`, `cost_model` (`single` | `submit+poll` | `escrow`, when
+litebeam has observed it), and `required_params` when the vendor publishes a
+schema. Inspect a pick with `get_quote(service_id)` (full param schema +
+binding price), then execute with `call_service(service_id: …[, params])` —
+that invoke hits exactly the vendor you picked, never re-routes, and returns
+`{"type":"job"}` if the vendor is async. The flat discovery fee is credited
+back when you execute a listed candidate within the window; managed keys pay
+from balance, BYO wallets sign it via x402 (call once without `payment` for
+the 402 quote). Use discover when you have more context than the router — your
+own eval, downstream constraints, prior results — and want the pick yourself.
+The older `call_service(request, mode: "recommend")` (free, rate-limited)
+still works but will retire with the two-verb contract — prefer `discover`.
+Plain `call_service(request)` is unchanged: it never returns a shortlist
+unless confidence is low.
+
+**HTTP-only clients get the same loop over REST** (no MCP needed — Base MCP,
+x402-fetch, AgentKit): `GET https://litebeam.xyz/api/recommend?q=…&wallet=0x…`
+returns the shortlist with full param schemas embedded (free, no key); execute a
+pick with `POST /api/call {"service_id": …, "params": …}` — the 402 offer is
+self-describing (its `extensions.bazaar` block carries the quoted service's
+param schema + a worked example), and params are validated before you are
+charged.
 
 ### 5. Rate results to improve your routing
-
 After a call, `rate_result(transaction_id, rating: 1-5)` teaches litebeam which
 services work for your account. Reuse (addressing by handle) and immediate
 re-queries are also read as implicit signals, so good reuse habits feed back
@@ -141,7 +164,6 @@ into ranking automatically. Rating is optional but compounds.
 ## Worked examples (principles, not an algorithm)
 
 **A. Repeat work → discover once, address by handle.**
-
 ```
 call_service(request: "get the current ETH price")
   → result + handle.service_id = "abc-…"
@@ -150,7 +172,6 @@ call_service(service_id: "abc-…")
 ```
 
 **B. A goal with two capabilities → two atomic calls (you plan, litebeam links).**
-
 ```
 // Goal: "make a product image and translate the tagline to French."
 call_service(request: "generate a product photo of a ceramic mug")   // capability 1
@@ -159,14 +180,12 @@ call_service(request: "translate 'Brewed for mornings' to French")    // capabil
 ```
 
 **C. Bound the cost, force a protocol.**
-
 ```
 call_service(request: "transcribe this audio clip",
              max_price_usdc: 0.01, protocol: "x402")
 ```
 
 **D. A long job → submit, then resume by handle (don't re-send the request).**
-
 ```
 call_service(request: "generate a 5-second video of a hamster")
   → { "type": "job", "job_handle": "job_…", "poll_after_ms": 3000 }
@@ -181,21 +200,20 @@ call_service(job_handle: "job_…")
 
 Some services can't finish inside one response (video, long compute). When that
 happens `call_service` returns a **job** instead of a result:
-
 ```
 { "type": "job", "job_handle": "job_…", "status": "running",
   "poll_after_ms": 3000, "cost_usdc": 0.05, "transaction_id": "…" }
 ```
-
 - **Resume by handle.** Call `call_service(job_handle: "job_…")` to poll/fetch. It
   returns `{type:"job"}` while still running (wait `poll_after_ms`, then call again)
   and `{type:"result"}` when done. Resuming hits the **same vendor** that started the
   job — it never re-routes.
-- **Never re-send the original `request` to "check status."** That starts NEW work on
-  a possibly different vendor and charges you again. Resume only by `job_handle`.
+- **Never re-send the original `request` to "check status."** That starts NEW work
+  on a possibly different vendor and charges you again. Resume only by `job_handle`.
 - You pay once, at submit (`cost_usdc`); status polls are free. `get_quote(job_handle)`
   confirms a resume is free.
-- Fast calls are unaffected — they still return `{type:"result"}` inline.
+- Fast calls are unaffected — they still return `{type:"result"}` inline. You only get
+  a job when the work genuinely won't fit in one response.
 
 ---
 
@@ -203,10 +221,15 @@ happens `call_service` returns a **job** instead of a result:
 
 | Tool | Use it to |
 |------|-----------|
+| `discover` | Find services for a NEW capability: ranked shortlist + `recommended`, honest `no_coverage` (uncharged), small fee credited back when you execute a pick. |
 | `call_service` | Run one capability (`request`), reuse a vendor (`service_id`), or resume a long job (`job_handle`). |
 | `list_services` | Browse/search the directory; each row has a `service_id` you can reuse. |
 | `get_quote` | Get price + signing params before paying (Direct mode) — plus the vendor's `param_schema` + `param_example` when published. |
 | `get_balance` | Managed mode: check wallet balance and deposit address. |
 | `rate_result` | Rate a `transaction_id` to improve your routing. |
-| `get_started` | Re-read this contract in-band. |
 | `test_connection` | Confirm auth, wallet, and tools after setup. |
+
+Connection/client setup (Claude Desktop, Cursor, Claude Code, HTTP clients) is a
+separate document: `GET https://mcp.litebeam.xyz/agent-setup`.
+
+— litebeam 0.7.0 · https://litebeam.xyz/docs

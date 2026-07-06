@@ -85,10 +85,12 @@ export interface CallServiceInput {
    * Default "auto": litebeam picks and executes the best service (when routing
    * confidence is low it returns `{ type: "candidates" }` instead of charging).
    * "recommend": no execution, no charge — returns a ranked shortlist
-   * (`CandidatesResponse`); inspect a pick with get_quote(service_id), then
-   * execute it with call_service(service_id). Discovery is free, rate-limited,
-   * and works without an API key. Plain call_service(request) never returns a
-   * shortlist unless confidence is low.
+   * (`CandidatesResponse`).
+   *
+   * DEPRECATED (litebeam/0.7.0): prefer the `discover` tool — same shortlist
+   * plus an explicit `recommended` pick and an honest `no_coverage` abstain,
+   * for a small flat fee credited back when you execute a listed candidate.
+   * mode:"recommend" will retire with the two-verb contract flip.
    */
   mode?: 'auto' | 'recommend';
 }
@@ -116,6 +118,20 @@ export interface CallServiceResult {
   candidates_evaluated: number;
   /** Whether AI routing was used (vs. explicit capability) */
   ai_routed: boolean;
+  /**
+   * litebeam/0.7.0: litebeam's own relevance verdict on the paid result.
+   * `matched_intent: false` means the data likely does not answer your request —
+   * stop and re-discover; do not escalate to another blind call. On direct
+   * service_id calls this is ADVISORY and runs only when `request` was included.
+   */
+  result_check?: { matched_intent: boolean; note?: string };
+  /** Agent-guide version — diff against your snapshot; re-read get_started when it moves. */
+  guide_version?: string;
+  /**
+   * litebeam/0.7.0: set when a request-only call executed via the prior-pick
+   * fast path — this vendor is one YOU chose before (pin / pref / discovery pick).
+   */
+  fastpath?: { matched_from: 'prior_pick'; service: string; similarity: number };
   /**
    * Reusable handle for the service that served this request. Pass `handle.service_id`
    * back as `service_id` on a later call_service to address this exact service directly
@@ -279,6 +295,14 @@ export interface ShortlistEntry {
   required_params?: string[];
   /** True when get_quote(service_id) will return a full param_schema. */
   param_schema_available?: boolean;
+  /**
+   * Relevance-floor label (litebeam/0.7.0). 'match' passed the floor; 'partial'
+   * failed it and appears only under `nearest` — an adjacent capability, NOT an
+   * answer. Calling a partial will not fulfil the request.
+   */
+  fit?: 'match' | 'partial';
+  /** Why a 'partial' entry is not a match. */
+  partial_note?: string;
 }
 
 /**
@@ -292,9 +316,92 @@ export interface CandidatesResponse {
   shortlist: ShortlistEntry[];
   /** What litebeam understood the ask to be (echoes your request in recommend mode). */
   interpreted_intent: string;
+  /** litebeam's pick (rank 1's service_id) — taking it is always a valid strategy. */
+  recommended?: string;
   /** Human/agent-readable instructions for what to do with the shortlist. */
   next_step?: string;
+  /** discover tool only: the flat discovery fee charged for this shortlist. */
+  discovery_fee_usdc?: number;
+  /** discover tool only: whether the fee was actually collected. */
+  charged?: boolean;
+  /** discover tool only: conversion-credit terms — execute a listed candidate
+   *  within `window_s` and the fee comes back. */
+  credit?: { window_s: number; note: string };
+  /** Agent-guide version — diff against your snapshot; re-read get_started when it moves. */
+  guide_version?: string;
 }
+
+// ── discover (litebeam/0.7.0) ─────────────────────────────────────────────────
+
+/**
+ * Signed USDC TransferWithAuthorization (EIP-3009 / EIP-712) — Direct-mode
+ * payment. Same shape as call_service's `payment_auth`. Sign for exactly the
+ * quoted `value`, to the quoted `operator_address`.
+ */
+export interface X402PaymentAuth {
+  /** Your wallet address (the signer). */
+  from: string;
+  /** Operator address from the quote. */
+  to: string;
+  /** Amount in micro-USDC (6 decimals) from the quote. */
+  value: string;
+  /** Unix seconds, typically now − 60. */
+  validAfter: string;
+  /** Unix seconds, typically now + 300. */
+  validBefore: string;
+  /** Random 32-byte hex (0x-prefixed), unique per authorization. */
+  nonce: string;
+  /** EIP-712 signature. */
+  signature: string;
+}
+
+/**
+ * The discovery verb: ranked shortlist for ONE capability, for a small flat fee
+ * (credited back when you execute a listed candidate within the credit window).
+ * Managed keys pay from balance; BYO wallets sign the fee via x402 — call once
+ * without `payment` to receive `DiscoverPaymentRequired` with signing params.
+ */
+export interface DiscoverInput {
+  /** One capability, natural language. One capability per discover call. */
+  request: string;
+  /** Drop candidates whose vendor price exceeds this. */
+  max_price_usdc?: number;
+  /** Shortlist size, 1–5 (default 5). */
+  limit?: number;
+  /** BYO wallet: signed USDC TransferWithAuthorization for the discovery fee. */
+  payment?: X402PaymentAuth;
+}
+
+/**
+ * Honest abstain: nothing in the catalog provides the capability. NEVER charged.
+ * `nearest` entries are labeled `fit: "partial"` — adjacent capabilities shown
+ * for orientation only; calling them will not fulfil the request.
+ */
+export interface NoCoverageResponse {
+  type: 'no_coverage';
+  interpreted_intent: string;
+  why: string;
+  nearest: ShortlistEntry[];
+  charged: false;
+  guide_version?: string;
+}
+
+/** BYO wallet 402 for the discovery fee — sign exactly `value` and re-call with `payment`. */
+export interface DiscoverPaymentRequired {
+  type: 'payment_required';
+  discovery_fee_usdc: number;
+  /** Fee in micro-USDC (6 decimals) — sign exactly this. */
+  value: string;
+  operator_address: string;
+  usdc_address: string;
+  network: 'base';
+  chain_id: 8453;
+  valid_after: number;
+  valid_before: number;
+  note: string;
+}
+
+export type DiscoverResponse = CandidatesResponse | NoCoverageResponse | DiscoverPaymentRequired;
 
 /**
  * Any call_service response. A sync success keeps all of `CallServiceResult`'s

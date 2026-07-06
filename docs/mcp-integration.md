@@ -91,6 +91,23 @@ Authorization: Bearer sk-litebeam-your-key-here
 
 ## MCP tools
 
+### `discover` (litebeam/0.7.0)
+
+Find services for one capability before spending on execution. Returns a ranked
+shortlist — `recommended` is litebeam's pick — with prices, reputation, latency
+and required params, or an honest `{"type": "no_coverage"}` when the catalog
+cannot serve the request (never charged). A small flat discovery fee applies and
+is **credited back** when you execute a listed candidate within the credit
+window. Managed keys pay from balance; BYO wallets call once without `payment`
+to receive the x402 signing quote, then re-call with the signed authorization.
+
+```ts
+const found = await client.callTool('discover', { request: 'technical SEO audit of a web page' });
+// → { type: 'candidates', recommended: '…', shortlist: [...], discovery_fee_usdc: …, credit: {...} }
+await client.callTool('call_service', { service_id: found.recommended, params: { url: 'https://example.com' } });
+// executing a listed candidate inside the window credits the discovery fee back
+```
+
 ### `call_service`
 
 Route any AI microservice call using natural language or an explicit capability keyword.
