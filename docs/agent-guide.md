@@ -37,12 +37,12 @@ split it and call each part.
 **For a NEW capability, use the `discover` tool.** `discover(request: "…")`
 returns a ranked shortlist — `recommended` is litebeam's pick (taking it is
 always a valid strategy), and every entry carries the `service_id` to execute
-it. A small flat discovery fee applies (shown in the response) and is
-**credited back automatically** when you execute a listed candidate within the
-credit window — discover-then-buy costs nothing extra. When the catalog cannot
-serve the request, discover returns `{"type": "no_coverage"}` and you are
-**not charged**: trust it. Entries labeled `fit: "partial"` are adjacent
-capabilities, not answers — calling them will not fulfil your request.
+it. A small flat discovery fee applies (shown in the response) — it buys the
+ranking itself: price × latency × verified on-chain reputation over the whole
+catalog. When the catalog cannot serve the request, discover returns
+`{"type": "no_coverage"}` and you are **not charged**: trust it. Entries
+labeled `fit: "partial"` are adjacent capabilities, not answers — calling
+them will not fulfil your request.
 
 You can also pass `request` straight to `call_service` and litebeam runs full
 AI routing (a small inference fee, ~$0.001). Every response includes a
@@ -122,11 +122,11 @@ litebeam has observed it), and `required_params` when the vendor publishes a
 schema. Inspect a pick with `get_quote(service_id)` (full param schema +
 binding price), then execute with `call_service(service_id: …[, params])` —
 that invoke hits exactly the vendor you picked, never re-routes, and returns
-`{"type":"job"}` if the vendor is async. The flat discovery fee is credited
-back when you execute a listed candidate within the window; managed keys pay
-from balance, BYO wallets sign it via x402 (call once without `payment` for
-the 402 quote). Use discover when you have more context than the router — your
-own eval, downstream constraints, prior results — and want the pick yourself.
+`{"type":"job"}` if the vendor is async. Managed keys pay the flat discovery
+fee from balance; BYO wallets sign it via x402 (call once without `payment`
+for the 402 quote). Use discover when you have more context than the router —
+your own eval, downstream constraints, prior results — and want the pick
+yourself.
 The older `call_service(request, mode: "recommend")` (free, rate-limited)
 still works but will retire with the two-verb contract — prefer `discover`.
 Plain `call_service(request)` is unchanged: it never returns a shortlist
@@ -221,7 +221,7 @@ happens `call_service` returns a **job** instead of a result:
 
 | Tool | Use it to |
 |------|-----------|
-| `discover` | Find services for a NEW capability: ranked shortlist + `recommended`, honest `no_coverage` (uncharged), small fee credited back when you execute a pick. |
+| `discover` | Find services for a NEW capability: ranked shortlist + `recommended`, honest `no_coverage` (uncharged), small flat fee. |
 | `call_service` | Run one capability (`request`), reuse a vendor (`service_id`), or resume a long job (`job_handle`). |
 | `list_services` | Browse/search the directory; each row has a `service_id` you can reuse. |
 | `get_quote` | Get price + signing params before paying (Direct mode) — plus the vendor's `param_schema` + `param_example` when published. |
@@ -232,4 +232,4 @@ happens `call_service` returns a **job** instead of a result:
 Connection/client setup (Claude Desktop, Cursor, Claude Code, HTTP clients) is a
 separate document: `GET https://mcp.litebeam.xyz/agent-setup`.
 
-— litebeam 0.7.0 · https://litebeam.xyz/docs
+— litebeam 0.7.1 · https://litebeam.xyz/docs

@@ -89,8 +89,8 @@ export interface CallServiceInput {
    *
    * DEPRECATED (litebeam/0.7.0): prefer the `discover` tool — same shortlist
    * plus an explicit `recommended` pick and an honest `no_coverage` abstain,
-   * for a small flat fee credited back when you execute a listed candidate.
-   * mode:"recommend" will retire with the two-verb contract flip.
+   * for a small flat fee. mode:"recommend" will retire with the two-verb
+   * contract flip.
    */
   mode?: 'auto' | 'recommend';
 }
@@ -320,13 +320,12 @@ export interface CandidatesResponse {
   recommended?: string;
   /** Human/agent-readable instructions for what to do with the shortlist. */
   next_step?: string;
-  /** discover tool only: the flat discovery fee charged for this shortlist. */
+  /** discover tool only: the flat discovery fee charged for this shortlist.
+   *  The fee is final — it buys the ranking itself (price × latency × verified
+   *  on-chain reputation over the whole catalog). Abstains are never charged. */
   discovery_fee_usdc?: number;
   /** discover tool only: whether the fee was actually collected. */
   charged?: boolean;
-  /** discover tool only: conversion-credit terms — execute a listed candidate
-   *  within `window_s` and the fee comes back. */
-  credit?: { window_s: number; note: string };
   /** Agent-guide version — diff against your snapshot; re-read get_started when it moves. */
   guide_version?: string;
 }
@@ -356,10 +355,10 @@ export interface X402PaymentAuth {
 }
 
 /**
- * The discovery verb: ranked shortlist for ONE capability, for a small flat fee
- * (credited back when you execute a listed candidate within the credit window).
+ * The discovery verb: ranked shortlist for ONE capability, for a small flat fee.
  * Managed keys pay from balance; BYO wallets sign the fee via x402 — call once
  * without `payment` to receive `DiscoverPaymentRequired` with signing params.
+ * Honest abstains (`no_coverage`) are never charged.
  */
 export interface DiscoverInput {
   /** One capability, natural language. One capability per discover call. */
