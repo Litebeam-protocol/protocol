@@ -303,6 +303,19 @@ export interface ShortlistEntry {
   fit?: 'match' | 'partial';
   /** Why a 'partial' entry is not a match. */
   partial_note?: string;
+  /**
+   * Placement transparency. Present when the entry's position was influenced
+   * by a placement push: 'curated' = litebeam quality curation,
+   * 'partner' = active partnership, 'sponsored' = paid premium placement.
+   * Placement only reorders entries that already passed the relevance gate —
+   * it never introduces an off-topic vendor — and a sponsored entry is never
+   * the `recommended` pick. Entries without this field ranked organically.
+   */
+  placement?: 'curated' | 'partner' | 'sponsored';
+  /** Partner display name (present for 'partner' and 'sponsored' placements). */
+  partner?: string;
+  /** True only on paid premium placements — always disclosed. */
+  sponsored?: boolean;
 }
 
 /**
