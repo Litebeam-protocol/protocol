@@ -35,12 +35,24 @@ When the agent calls a service, litebeam returns an HTTP 402 response with the p
 
 | Property | Detail |
 |---|---|
-| Network | Base (mainnet) |
-| Currency | USDC via x402 protocol |
-| Signup required | No — just a Base wallet with USDC |
+| Networks | Base (mainnet), Robinhood Chain (mainnet) |
+| Currency | USDC on Base · USDG on Robinhood Chain — via x402 protocol |
+| Signup required | No — just an EVM wallet holding either stablecoin |
 | Payment flow | 402 response → agent signs → litebeam verifies → fulfills |
 | Budget controls | Agent-side only |
 | litebeam fee | Included in the quoted price |
+
+### Networks
+
+| Network | Token | Chain id | EIP-712 domain |
+|---|---|---|---|
+| Base (default) | USDC | 8453 | `{ "USD Coin", "2" }` |
+| Robinhood Chain | USDG | 4663 | `{ "Global Dollar", "1" }` |
+
+Select with `get_quote(network: "robinhood")` / `payment_auth.network` (MCP) or
+by choosing the `eip155:4663` accepts entry (REST x402). Both tokens use 6
+decimals; amounts are micro-units in both. Payments are gasless for the payer
+on both networks (EIP-3009 `TransferWithAuthorization`).
 
 > **Direct mode has no dashboard budget controls.** Your agent is responsible for its own spend limits. litebeam quotes the price upfront in the 402 response, so your agent can inspect cost before committing.
 

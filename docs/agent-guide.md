@@ -154,10 +154,32 @@ into ranking automatically. Rating is optional but compounds.
   litebeam draws per call from your USDC balance on Base. Budget controls
   (daily limit, approval threshold, low-balance alert) apply; a call above your
   approval threshold pauses for human approval and returns a request id.
-- **Direct** — bring your own Base wallet, no signup. Call `get_quote` first to
-  get the exact price and signing parameters, sign a USDC authorization, and
-  pass it as `payment_auth`. litebeam quotes the price up front; budget is your
-  responsibility.
+- **Direct** — bring your own wallet, no signup. Call `get_quote` first to get
+  the exact price and signing parameters, sign a stablecoin transfer
+  authorization (EIP-3009 — gasless for you), and pass it as `payment_auth`.
+  litebeam quotes the price up front; budget is your responsibility.
+  Networks: USDC on Base (default) and USDG on Robinhood Chain
+  (`network: "robinhood"`).
+
+### Paying from Robinhood Chain (USDG)
+
+litebeam accepts USDG on Robinhood Chain (chain id 4663) in Direct mode — same
+flow as Base, different token and domain:
+
+1. Fund any EVM wallet with USDG on Robinhood Chain (for example: buy USDG on
+   Robinhood, withdraw to your self-custody wallet). You need NO ETH — payments
+   are gasless for the payer.
+2. `get_quote(request: "…", network: "robinhood")` → returns `token_address`,
+   `chain_id: 4663`, and the exact EIP-712 domain to sign:
+   `{ name: "Global Dollar", version: "1", chainId: 4663,
+      verifyingContract: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" }`
+3. Sign the `TransferWithAuthorization` and pass it as `payment_auth`,
+   **including `network: "robinhood"`** — omitting it verifies against Base and
+   fails.
+
+Plain-HTTP agents: the 402 offer from `POST https://litebeam.xyz/api/call`
+lists an `eip155:4663` entry in `accepts`; any standard x402 client can select
+it and pay with the `X-PAYMENT` header (`network: "eip155:4663"`).
 
 ---
 
@@ -232,4 +254,4 @@ happens `call_service` returns a **job** instead of a result:
 Connection/client setup (Claude Desktop, Cursor, Claude Code, HTTP clients) is a
 separate document: `GET https://mcp.litebeam.xyz/agent-setup`.
 
-— litebeam 0.7.1 · https://litebeam.xyz/docs
+— litebeam 0.7.2 · https://litebeam.xyz/docs

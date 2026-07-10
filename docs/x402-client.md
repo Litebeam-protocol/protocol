@@ -22,6 +22,8 @@ litebeam's `POST https://litebeam.xyz/api/call` speaks this exact flow, so any x
 2. **Quote** — `POST /api/call {"service_id": "<pick>"}` → `402`. The offer is self-describing: its `extensions.bazaar` block carries litebeam's input format with the quoted service's param schema nested at `body.params`, plus a worked example.
 3. **Pay + execute** — resubmit with `params` and the `X-PAYMENT` header. Params are validated against the vendor schema **before** you are charged — missing required fields return a `400` teaching error (with the schema attached), uncharged. Pinned calls carry no routing/inference fee.
 
+**Payment networks:** the 402 offer's `accepts` array lists every network litebeam accepts — USDC on Base (`eip155:8453`, always first) and USDG on Robinhood Chain (`eip155:4663`). Pick the entry for your wallet's network, sign against the EIP-712 domain in its `extra` field, and set the matching `network` in your `X-PAYMENT` payload. Both are gasless for the payer.
+
 ## Setup
 
 ```bash
