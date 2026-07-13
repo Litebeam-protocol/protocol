@@ -19,12 +19,10 @@ export interface CallServiceInput {
   request?: string;
 
   /**
-   * Explicit capability keyword. Skips AI routing — use when you know exactly
-   * what you need and want to avoid the inference overhead charge.
-   *
-   * @example "image_generation"
-   * @example "translation"
-   * @example "web_search"
+   * RETIRED (litebeam/0.7.3, two-verb contract live): returns a teaching error.
+   * Use `discover(request)` to find services, then `call_service(service_id)`
+   * to execute. Kept in the schema so stale integrations fail with guidance
+   * instead of a validation error.
    */
   capability?: string;
 
@@ -82,15 +80,13 @@ export interface CallServiceInput {
   job_handle?: string;
 
   /**
-   * Default "auto": litebeam picks and executes the best service (when routing
-   * confidence is low it returns `{ type: "candidates" }` instead of charging).
-   * "recommend": no execution, no charge — returns a ranked shortlist
-   * (`CandidatesResponse`).
-   *
-   * DEPRECATED (litebeam/0.7.0): prefer the `discover` tool — same shortlist
-   * plus an explicit `recommended` pick and an honest `no_coverage` abstain,
-   * for a small flat fee. mode:"recommend" will retire with the two-verb
-   * contract flip.
+   * RETIRED (litebeam/0.7.3, two-verb contract live): returns a teaching error.
+   * Discovery is its own verb — `discover(request)` returns the ranked
+   * shortlist (small flat fee, honest `no_coverage` uncharged); execution is
+   * `call_service(service_id)`. A request-only call_service outside your
+   * chosen set (pins ∪ prior settled picks) returns the same charged shortlist
+   * instead of auto-executing. Kept in the schema so stale integrations fail
+   * with guidance instead of a validation error.
    */
   mode?: 'auto' | 'recommend';
 }
@@ -319,10 +315,11 @@ export interface ShortlistEntry {
 }
 
 /**
- * Returned by call_service(mode: "recommend"), and under mode "auto" when routing
- * confidence is below the threshold. Nothing was executed or charged. Pick an
- * entry and execute it via call_service(service_id) — that invoke hits exactly
- * the picked vendor and never re-routes.
+ * Returned by `discover`, and by a request-only call_service outside the
+ * requester's chosen set (litebeam/0.7.3: the call IS a discovery — litebeam
+ * never auto-spends on a vendor the requester hasn't chosen). Nothing was
+ * executed. Pick an entry and execute it via call_service(service_id) — that
+ * invoke hits exactly the picked vendor and never re-routes.
  */
 export interface CandidatesResponse {
   type: 'candidates';

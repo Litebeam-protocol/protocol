@@ -44,9 +44,13 @@ catalog. When the catalog cannot serve the request, discover returns
 labeled `fit: "partial"` are adjacent capabilities, not answers — calling
 them will not fulfil your request.
 
-You can also pass `request` straight to `call_service` and litebeam runs full
-AI routing (a small inference fee, ~$0.001). Every response includes a
-**`handle`** — a reusable address for the chosen service:
+Passing `request` straight to `call_service` works too, with two outcomes:
+if the request matches a service you have used or pinned before, it executes
+there directly (the fast path — no fee beyond the call itself); otherwise the
+call IS a discovery — it returns the same charged shortlist as `discover`
+(litebeam never auto-spends your money on a vendor you have not chosen).
+Every executed response includes a **`handle`** — a reusable address for the
+chosen service:
 
 ```json
 "handle": {
@@ -127,15 +131,17 @@ fee from balance; BYO wallets sign it via x402 (call once without `payment`
 for the 402 quote). Use discover when you have more context than the router —
 your own eval, downstream constraints, prior results — and want the pick
 yourself.
-The older `call_service(request, mode: "recommend")` (free, rate-limited)
-still works but will retire with the two-verb contract — prefer `discover`.
-Plain `call_service(request)` is unchanged: it never returns a shortlist
-unless confidence is low.
+The old `call_service` parameters `mode: "recommend"` and `capability` are
+retired — the two-verb contract is live. Discovery is `discover`; execution is
+`call_service(service_id: …)`; a request-only `call_service` outside your
+chosen services returns the charged shortlist instead of auto-executing.
 
 **HTTP-only clients get the same loop over REST** (no MCP needed — Base MCP,
 x402-fetch, AgentKit): `GET https://litebeam.xyz/api/recommend?q=…&wallet=0x…`
-returns the shortlist with full param schemas embedded (free, no key); execute a
-pick with `POST /api/call {"service_id": …, "params": …}` — the 402 offer is
+answers 402 with x402 signing details for the same flat discovery fee —
+re-request with the `X-PAYMENT` header to get the shortlist with full param
+schemas embedded (honest `no_coverage` is never charged); execute a pick with
+`POST /api/call {"service_id": …, "params": …}` — the 402 offer is
 self-describing (its `extensions.bazaar` block carries the quoted service's
 param schema + a worked example), and params are validated before you are
 charged.
@@ -245,7 +251,7 @@ happens `call_service` returns a **job** instead of a result:
 |------|-----------|
 | `discover` | Find services for a NEW capability: ranked shortlist + `recommended`, honest `no_coverage` (uncharged), small flat fee. |
 | `call_service` | Run one capability (`request`), reuse a vendor (`service_id`), or resume a long job (`job_handle`). |
-| `list_services` | Browse/search the directory; each row has a `service_id` you can reuse. |
+| `list_services` | The phone book: keyword/category browse or fetch-by-`service_id` (free). Intent matching lives in `discover`. |
 | `get_quote` | Get price + signing params before paying (Direct mode) — plus the vendor's `param_schema` + `param_example` when published. |
 | `get_balance` | Managed mode: check wallet balance and deposit address. |
 | `rate_result` | Rate a `transaction_id` to improve your routing. |
@@ -254,4 +260,4 @@ happens `call_service` returns a **job** instead of a result:
 Connection/client setup (Claude Desktop, Cursor, Claude Code, HTTP clients) is a
 separate document: `GET https://mcp.litebeam.xyz/agent-setup`.
 
-— litebeam 0.7.2 · https://litebeam.xyz/docs
+— litebeam 0.7.3 · https://litebeam.xyz/docs
