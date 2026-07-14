@@ -312,6 +312,16 @@ export interface ShortlistEntry {
   partner?: string;
   /** True only on paid premium placements — always disclosed. */
   sponsored?: boolean;
+  /**
+   * How the entry entered the shortlist when not via direct retrieval.
+   * 'family_rescue' (litebeam/0.7.3): every retrieved candidate failed the
+   * relevance floor, so litebeam expanded the nearest candidates' service
+   * families (same provider+name, e.g. per-ticker variants) and this sibling —
+   * typically the parametric/universal variant — was approved by litebeam's
+   * relevance judge. Treat it like any other match; the label exists for
+   * transparency and may be dropped once the path is fully trusted.
+   */
+  via?: 'family_rescue';
 }
 
 /**
